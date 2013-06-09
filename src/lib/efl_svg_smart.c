@@ -245,7 +245,7 @@ static Eina_Bool _efl_svg_smart_idler_cb(void *data)
 	}
 	/* get the damages */
 	_efl_svg_smart_damage_clear(thiz);
-	egueb_svg_element_svg_damages_get(thiz->svg, _efl_svg_smart_damages, thiz);
+	egueb_svg_document_damages_get(thiz->doc, _efl_svg_smart_damages, thiz);
 	if (!thiz->damage_rectangles) goto done;
 
 	/* FIXME from the docs, looks like if i put true on the second argument, the whole data
