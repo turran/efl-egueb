@@ -648,6 +648,14 @@ EAPI Evas_Object * efl_svg_new(Evas *e)
 	return evas_object_smart_add(e, _smart);
 }
 
+EAPI Egueb_Dom_Node * efl_svg_document_get(Evas_Object *o)
+{
+	Efl_Svg_Smart *thiz;
+
+	thiz = evas_object_smart_data_get(o);
+	return egueb_dom_node_ref(thiz->doc);	
+}
+
 EAPI void efl_svg_file_set(Evas_Object *o, const char *file)
 {
 	Efl_Svg_Smart *thiz;

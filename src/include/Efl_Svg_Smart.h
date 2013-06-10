@@ -3,6 +3,7 @@
 
 #include <Eina.h>
 #include <Evas.h>
+#include <Egueb_Dom.h>
 
 #ifdef EAPI
 # undef EAPI
@@ -33,6 +34,7 @@
 EAPI int efl_svg_init(void);
 EAPI int efl_svg_shutdown(void);
 EAPI Evas_Object * efl_svg_new(Evas *e);
+EAPI Egueb_Dom_Node * efl_svg_document_get(Evas_Object *o);
 EAPI void efl_svg_file_set(Evas_Object *o, const char *file);
 EAPI const char * efl_svg_file_get(Evas_Object *o);
 EAPI void efl_svg_debug_damage_set(Evas_Object *o, Eina_Bool debug);
