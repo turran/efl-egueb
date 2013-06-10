@@ -49,7 +49,6 @@ typedef struct _Efl_Svg_Smart
 	Evas_Object *bkg;
 	Evas_Object *img;
 	Egueb_Dom_Node *doc;
-	Egueb_Dom_Node *svg;
 	Ecore_Idle_Enterer *idler;
 	Ecore_Timer *animator;
 	Enesim_Backend backend;
@@ -173,9 +172,13 @@ static void _efl_svg_smart_damage_clear(Efl_Svg_Smart *thiz)
 static Eina_Bool _efl_svg_smart_animator_cb(void *data)
 {
 	Efl_Svg_Smart *thiz = data;
+	Egueb_Dom_Node *svg = NULL;;
 
-	if (!thiz->svg) goto done;
-	egueb_svg_element_svg_time_tick(thiz->svg);
+	egueb_dom_document_element_get(thiz->doc, &svg);
+	if (!svg) goto done;
+
+	egueb_svg_element_svg_time_tick(svg);
+	egueb_dom_node_unref(svg);
 done:
 	return EINA_TRUE;
 }
@@ -206,7 +209,7 @@ static void _efl_svg_smart_mouse_move(void *data, Evas *e EINA_UNUSED, Evas_Obje
 	evas_object_geometry_get(thiz->img, &ix, &iy, NULL, NULL);
 	svgx = ev->cur.canvas.x - ix;
 	svgy = ev->cur.canvas.y - iy;
-	egueb_svg_document_feed_mouse_move(thiz->svg, svgx, svgy);
+	egueb_svg_document_feed_mouse_move(thiz->doc, svgx, svgy);
 }
 
 /* The reason to create another idler is because evas does not allow to hook
@@ -217,11 +220,13 @@ static void _efl_svg_smart_mouse_move(void *data, Evas *e EINA_UNUSED, Evas_Obje
 static Eina_Bool _efl_svg_smart_idler_cb(void *data)
 {
 	Efl_Svg_Smart *thiz = (Efl_Svg_Smart *)data;
+	Egueb_Dom_Node *svg = NULL;
 	Enesim_Log *error = NULL;
 	Eina_Rectangle *r;
 	Eina_Bool new_svg = EINA_FALSE;
 
-	if (!thiz->svg) goto done;
+	egueb_dom_document_element_get(thiz->doc, &svg);
+	if (!svg) goto done;
 	if (thiz->go_to)
 	{
 		efl_svg_file_set(thiz->o, thiz->go_to);
@@ -241,7 +246,7 @@ static Eina_Bool _efl_svg_smart_idler_cb(void *data)
 		/* feed a mouse move event to inform our current cursor position */
 		evas_object_geometry_get(thiz->img, &ix, &iy, NULL, NULL);
 		evas_pointer_canvas_xy_get(thiz->evas, &x, &y);
-		egueb_svg_document_feed_mouse_move(thiz->svg, x - ix, y - iy);
+		egueb_svg_document_feed_mouse_move(svg, x - ix, y - iy);
 	}
 	/* get the damages */
 	_efl_svg_smart_damage_clear(thiz);
@@ -261,7 +266,7 @@ static Eina_Bool _efl_svg_smart_idler_cb(void *data)
 #endif
 
 	_efl_svg_smart_benchmark(EINA_TRUE);
-	if (!egueb_svg_element_svg_draw_list(thiz->svg, thiz->s, thiz->damage_rectangles, 0, 0, &error))
+	if (!egueb_svg_element_svg_draw_list(svg, thiz->s, thiz->damage_rectangles, 0, 0, &error))
 	{
 		printf("ERROR drawing!\n");
 	}
@@ -285,6 +290,10 @@ no_surface:
 	evas_object_image_data_update_add(thiz->img, 0, 0, iw, ih);
 #endif
 done:
+	if (svg)
+	{
+		egueb_dom_node_unref(svg);
+	}
 	return EINA_TRUE;
 }
 
@@ -357,14 +366,8 @@ static void _efl_svg_smart_sw_surface_reconfigure(Efl_Svg_Smart *thiz, Evas_Coor
 
 static void _efl_svg_smart_reconfigure(Efl_Svg_Smart *thiz)
 {
-	Evas_Coord x;
-	Evas_Coord y;
-	Evas_Coord w;
-	Evas_Coord h;
-	Evas_Coord iw;
-	Evas_Coord ih;
-	Evas_Coord ix;
-	Evas_Coord iy;
+	Evas_Coord x, y, w, h;
+	Evas_Coord ix, iy, iw, ih;
 	double aw;
 	double ah;
 
@@ -376,8 +379,6 @@ static void _efl_svg_smart_reconfigure(Efl_Svg_Smart *thiz)
 	evas_object_move(thiz->bkg, x, y);
 	evas_object_resize(thiz->bkg, w, h);
 	printf("size %d %d\n", w, h);
-
-	if (!thiz->svg) return;
 
 	/* resize the image */
 	egueb_svg_document_width_set(thiz->doc, w);
@@ -506,8 +507,6 @@ static void _efl_svg_smart_del(Evas_Object *obj)
 	Efl_Svg_Smart *thiz;
 
 	thiz = evas_object_smart_data_get(obj);
-	if (thiz->svg)
-		egueb_dom_node_unref(thiz->svg);
 	/* TODO the idler */
 	/* TODO the animator */
 	/* TODO the gl_surface */
@@ -538,7 +537,6 @@ static void _efl_svg_smart_resize(Evas_Object *obj, Evas_Coord w, Evas_Coord h)
 
 	thiz = evas_object_smart_data_get(obj);
 	if ((thiz->w == w) && (thiz->h == h)) return;
-	if (!thiz->svg) return;
 
 	thiz->w = w;
 	thiz->h = h;
@@ -664,11 +662,6 @@ EAPI void efl_svg_file_set(Evas_Object *o, const char *file)
 	char *tmp;
 
 	thiz = evas_object_smart_data_get(o);
-	if (thiz->svg)
-	{
-		egueb_dom_node_unref(thiz->svg);
-		thiz->svg = NULL;
-	}
 	if (thiz->file)
 	{
 		free(thiz->file);
@@ -689,7 +682,6 @@ EAPI void efl_svg_file_set(Evas_Object *o, const char *file)
 	}
 	egueb_dom_parser_parse(im, thiz->doc);
 	enesim_image_data_free(im);
-	egueb_dom_document_element_get(thiz->doc, &thiz->svg);
 #if 0
 	egueb_svg_element_svg_application_descriptor_set(e, &_efl_svg_smart_descriptor, thiz);
 #endif
@@ -725,11 +717,17 @@ EAPI void efl_svg_debug_damage_set(Evas_Object *o, Eina_Bool debug)
 EAPI void efl_svg_fps_set(Evas_Object *o, int fps)
 {
 	Efl_Svg_Smart *thiz;
+	Egueb_Dom_Node *svg = NULL;
 
 	if (fps < 0) return;
 	thiz = evas_object_smart_data_get(o);
 	/* remove the animtor and add another one with the correct fps */
 	thiz->fps = fps;
 	ecore_timer_interval_set(thiz->animator, 1.0/thiz->fps);
-	egueb_svg_element_svg_animations_fps_set(thiz->svg, thiz->fps);
+	egueb_dom_document_element_get(thiz->doc, &svg);
+	if (svg)
+	{
+		egueb_svg_element_svg_animations_fps_set(svg, thiz->fps);
+		egueb_dom_node_unref(svg);
+	}
 }
