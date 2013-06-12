@@ -40,14 +40,11 @@ typedef struct _Efl_Svg_Smart
 	Evas *evas;
 	Evas_Object *o;
 
-	Evas_Coord ix;
-	Evas_Coord iy;
-	Evas_Coord x;
-	Evas_Coord y;
-	Evas_Coord w;
-	Evas_Coord h;
+	Evas_Coord ix, iy;
+	Evas_Coord x, y, w, h;
 	Evas_Object *bkg;
 	Evas_Object *img;
+	Evas_Object *img_clip;
 	Egueb_Dom_Node *doc;
 	Ecore_Idle_Enterer *idler;
 	Ecore_Timer *animator;
@@ -141,7 +138,7 @@ static Eina_Bool _efl_svg_smart_damages(Egueb_Dom_Node *e EINA_UNUSED, Eina_Rect
 			evas_object_color_set(o, 64, 0, 0, 64);
 			thiz->damage_objects = eina_list_append(thiz->damage_objects, o);
 		}
-		printf("adding rectangle with image origin at %d %d\n", thiz->ix, thiz->iy);
+		//printf("adding rectangle with image origin at %d %d\n", thiz->ix, thiz->iy);
 		evas_object_move(o, r->x + thiz->ix, r->y + thiz->iy);
 		evas_object_resize(o, r->w, r->h);
 		evas_object_show(o);
@@ -376,9 +373,12 @@ static void _efl_svg_smart_reconfigure(Efl_Svg_Smart *thiz)
 	x = thiz->x;
 	y = thiz->y;
 
+	/* resize and move the main background object */
 	evas_object_move(thiz->bkg, x, y);
 	evas_object_resize(thiz->bkg, w, h);
-	printf("size %d %d\n", w, h);
+	/* do the same on the clip */
+	evas_object_move(thiz->img_clip, x, y);
+	evas_object_resize(thiz->img_clip, w, h);
 
 	/* resize the image */
 	egueb_svg_document_width_set(thiz->doc, w);
@@ -415,7 +415,6 @@ static void _efl_svg_smart_reconfigure(Efl_Svg_Smart *thiz)
 		iy += (thiz->h - h) / 2;
 	thiz->ix = ix;
 	thiz->iy = iy;
-	printf("image position %d %d\n", thiz->ix, thiz->iy);
 	evas_object_move(thiz->img, ix, iy);
 }
 /*----------------------------------------------------------------------------*
@@ -444,9 +443,14 @@ static void _efl_svg_smart_add(Evas_Object *obj)
 	evas_object_color_set(thiz->bkg, 255, 255, 255, 255);
 	evas_object_smart_member_add(thiz->bkg, obj);
 
+	thiz->img_clip = evas_object_rectangle_add(e);
+	evas_object_color_set(thiz->img_clip, 255, 255, 255, 255);
+	evas_object_smart_member_add(thiz->img_clip, obj);
+
    	thiz->img = evas_object_image_add(e);
-	evas_object_smart_member_add(thiz->img, obj);
 	evas_object_image_alpha_set(thiz->img, EINA_TRUE);
+	evas_object_clip_set(thiz->img, thiz->img_clip);
+	evas_object_smart_member_add(thiz->img, obj);
 
 	thiz->fps = 30;
 
@@ -514,6 +518,7 @@ static void _efl_svg_smart_del(Evas_Object *obj)
 	/* TODO the damage_objects and rectangles */
 	evas_object_del(thiz->bkg);
 	evas_object_del(thiz->img);
+	evas_object_del(thiz->img_clip);
 	if (thiz->file)
 		free(thiz->file);
 	free(thiz);
@@ -551,6 +556,7 @@ static void _efl_svg_smart_show(Evas_Object *obj)
 
   	evas_object_show(thiz->bkg);
   	evas_object_show(thiz->img);
+  	evas_object_show(thiz->img_clip);
 }
 
 static void _efl_svg_smart_hide(Evas_Object *obj)
@@ -561,6 +567,7 @@ static void _efl_svg_smart_hide(Evas_Object *obj)
 
   	evas_object_hide(thiz->bkg);
   	evas_object_hide(thiz->img);
+  	evas_object_hide(thiz->img_clip);
 }
 
 static void _efl_svg_smart_color_set(Evas_Object *obj, int r, int g, int b, int a)
