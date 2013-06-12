@@ -263,7 +263,8 @@ static Eina_Bool _efl_svg_smart_idler_cb(void *data)
 #endif
 
 	_efl_svg_smart_benchmark(EINA_TRUE);
-	if (!egueb_svg_element_svg_draw_list(svg, thiz->s, thiz->damage_rectangles, 0, 0, &error))
+	/* we use the fill variant given that we need to overwrite what is in the image */
+	if (!egueb_svg_element_svg_fill_list(svg, thiz->s, thiz->damage_rectangles, 0, 0, &error))
 	{
 		printf("ERROR drawing!\n");
 	}
