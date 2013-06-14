@@ -512,6 +512,7 @@ static void _efl_svg_smart_del(Evas_Object *obj)
 	Efl_Svg_Smart *thiz;
 
 	thiz = evas_object_smart_data_get(obj);
+	egueb_dom_node_unref(thiz->doc);
 	/* TODO the idler */
 	/* TODO the animator */
 	/* TODO the gl_surface */
