@@ -24,6 +24,12 @@ typedef double		GLdouble;	/* double precision float */
 
 #include <Egueb_Svg.h>
 
+#define CRI(...) EINA_LOG_DOM_CRIT(_log, __VA_ARGS__)
+#define ERR(...) EINA_LOG_DOM_ERR(_log, __VA_ARGS__)
+#define WRN(...) EINA_LOG_DOM_WARN(_log, __VA_ARGS__)
+#define INF(...) EINA_LOG_DOM_INFO(_log, __VA_ARGS__)
+#define DBG(...) EINA_LOG_DOM_DBG(_log, __VA_ARGS__)
+
 #include "Efl_Svg_Smart.h"
 
 /*============================================================================*
@@ -72,7 +78,7 @@ typedef struct _Efl_Svg_Smart
 
 static Evas_Smart *_smart = NULL;
 static int _init = 0;
-
+static int _log = -1;
 /*----------------------------------------------------------------------------*
  *                           Application interface                            *
  *----------------------------------------------------------------------------*/
@@ -125,7 +131,7 @@ static Eina_Bool _efl_svg_smart_damages(Egueb_Dom_Node *e EINA_UNUSED, Eina_Rect
 	r = malloc(sizeof(Eina_Rectangle));
 	*r = *area;
 
-	//printf("callback damage %d %d %d %d\n", area->x, area->y, area->w, area->h);
+	INF("Adding damage at %" EINA_RECTANGLE_FORMAT, EINA_RECTANGLE_ARGS(area));
 	thiz->damage_rectangles = eina_list_append(thiz->damage_rectangles, r);
 	if (thiz->debug_damage)
 	{
@@ -138,7 +144,7 @@ static Eina_Bool _efl_svg_smart_damages(Egueb_Dom_Node *e EINA_UNUSED, Eina_Rect
 			evas_object_color_set(o, 64, 0, 0, 64);
 			thiz->damage_objects = eina_list_append(thiz->damage_objects, o);
 		}
-		//printf("adding rectangle with image origin at %d %d\n", thiz->ix, thiz->iy);
+		DBG("Adding rectangle object at %d %d", thiz->ix, thiz->iy);
 		evas_object_move(o, r->x + thiz->ix, r->y + thiz->iy);
 		evas_object_resize(o, r->w, r->h);
 		evas_object_show(o);
@@ -221,6 +227,7 @@ static Eina_Bool _efl_svg_smart_idler_cb(void *data)
 	Enesim_Log *error = NULL;
 	Eina_Rectangle *r;
 	Eina_Bool new_svg = EINA_FALSE;
+	Eina_Bool ret;
 
 	egueb_dom_document_element_get(thiz->doc, &svg);
 	if (!svg) goto done;
@@ -264,15 +271,16 @@ static Eina_Bool _efl_svg_smart_idler_cb(void *data)
 
 	_efl_svg_smart_benchmark(EINA_TRUE);
 	/* we use the fill variant given that we need to overwrite what is in the image */
-	if (!egueb_svg_element_svg_fill_list(svg, thiz->s, thiz->damage_rectangles, 0, 0, &error))
-	{
-		printf("ERROR drawing!\n");
-	}
+	ret = egueb_svg_element_svg_fill_list(svg, thiz->s, thiz->damage_rectangles, 0, 0, &error);
 	_efl_svg_smart_benchmark(EINA_FALSE);
-	if (error)
+	if (!ret)
 	{
-		enesim_log_dump(error);
-		enesim_log_delete(error);
+		ERR("Error drawing");
+		if (error)
+		{
+			enesim_log_dump(error);
+			enesim_log_delete(error);
+		}
 	}
 	/* free the list and its rectangles too, this should change whenever the rects are cached */
 no_surface:
@@ -637,6 +645,7 @@ EAPI int efl_svg_init(void)
 	if (++_init != 1)
 		return _init;
 	egueb_svg_init();
+	_log = eina_log_domain_register("efl_svg", EINA_COLOR_BLUE);
 	return _init;
 }
 
@@ -644,6 +653,7 @@ EAPI int efl_svg_shutdown(void)
 {
 	if (--_init != 0)
 		return _init;
+	eina_log_domain_unregister(_log);
 	egueb_svg_shutdown();
 	return _init;
 }
