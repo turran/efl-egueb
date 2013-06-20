@@ -82,6 +82,12 @@ static int _log = -1;
 /*----------------------------------------------------------------------------*
  *                           Application interface                            *
  *----------------------------------------------------------------------------*/
+static const char * _efl_svg_mart_filename_get(void *user_data)
+{
+	Efl_Svg_Smart *thiz = user_data;
+	return thiz->file;
+}
+
 #if 0
 static const char * _efl_svg_smart_base_dir_get(Egueb_Dom_Node *e EINA_UNUSED, void *data)
 {
@@ -511,8 +517,9 @@ static void _efl_svg_smart_add(Evas_Object *obj)
 	evas_render_method_list_free(engines);
 
 	/* create the document */
-	/* TODO later we should put the application descirptor */
 	thiz->doc = egueb_svg_document_new(NULL);
+	/* set the different application callbacks */
+	egueb_svg_document_filename_get_cb_set(thiz->doc, _efl_svg_mart_filename_get, thiz);
 }
 
 static void _efl_svg_smart_del(Evas_Object *obj)
