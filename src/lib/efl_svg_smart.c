@@ -123,7 +123,7 @@ static void _efl_svg_smart_benchmark(Eina_Bool start)
 		last = t;
 		return;
 	}
-	fprintf(stderr, "drawing took %g at %g\n", t - last, last - td);
+	INF("Drawing took %g at %g", t - last, last - td);
 	td = t;
 	last = t;
 }
