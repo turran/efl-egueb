@@ -4,18 +4,21 @@
 
 #include <math.h>
 #include <libgen.h>
+#include <sys/time.h>
 
 #include <Evas.h>
 #include <Ecore.h>
 
+#include <Eina_Extra.h>
+
 #ifdef HAVE_GL
-#define ENESIM_EXTENSION
-#include <Enesim.h>
+# define ENESIM_EXTENSION
+# include <Enesim.h>
 /* FIXME this one is missing on the evas-gl */
 typedef double		GLdouble;	/* double precision float */
-#include <Evas_GL.h>
-#include <Enesim_OpenGL.h>
-#define GLERR {\
+# include <Evas_GL.h>
+# include <Enesim_OpenGL.h>
+# define GLERR {\
         GLenum err; \
         err = glGetError(); \
         printf("Error %x\n", err); \
@@ -137,7 +140,7 @@ static Eina_Bool _efl_svg_smart_damages(Egueb_Dom_Node *e EINA_UNUSED, Eina_Rect
 	r = malloc(sizeof(Eina_Rectangle));
 	*r = *area;
 
-	INF("Adding damage at %" EINA_RECTANGLE_FORMAT, EINA_RECTANGLE_ARGS(area));
+	INF("Adding damage at %" EINA_EXTRA_RECTANGLE_FORMAT, EINA_EXTRA_RECTANGLE_ARGS(area));
 	thiz->damage_rectangles = eina_list_append(thiz->damage_rectangles, r);
 	if (thiz->debug_damage)
 	{
