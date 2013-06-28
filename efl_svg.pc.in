@@ -7,7 +7,7 @@ pkgincludedir=@pkgincludedir@-@VMAJ@
 Name: @PACKAGE_NAME@
 Description: Esvg smart object
 Version: @VERSION@
-Requires.private: @requirements_efl_svg@
+Requires.private: @requirements_pc@
 Libs: -L${libdir} -lefl_svg
 Libs.private:
 Cflags: -I${pkgincludedir}
