@@ -44,6 +44,7 @@ typedef struct _Efl_Svg_Smart
 	char *file;
 	int fps;
 	Eina_Bool debug_damage;
+	Eina_Bool zoom_and_pan;
 
 	/* private */
 	Evas *evas;
@@ -77,6 +78,12 @@ typedef struct _Efl_Svg_Smart
 	/* app descriptor */
 	char *base_dir;
 	char *go_to;
+
+	/* event interface for zoom and pan */
+	Eina_Bool down;
+	Evas_Coord down_x, down_y;
+	Evas_Coord img_down_x, img_down_y;
+	Eina_Bool scrolling;
 } Efl_Svg_Smart;
 
 static Evas_Smart *_smart = NULL;
@@ -200,13 +207,38 @@ static void _efl_svg_smart_mouse_up(void *data, Evas *e EINA_UNUSED, Evas_Object
 	Efl_Svg_Smart *thiz = (Efl_Svg_Smart *)data;
 /* 	Evas_Event_Mouse_Up *ev = event_info; */
 	egueb_svg_document_feed_mouse_up(thiz->doc, 0);
+	thiz->down = EINA_FALSE;
+	{
+		Egueb_Dom_Node *svg;
+		egueb_dom_document_element_get(thiz->doc, &svg);
+		ERR("Setting scale to 1x");
+		egueb_svg_element_svg_current_scale_set(svg, 1);
+		egueb_dom_node_unref(svg);
+	}
 }
 
 static void _efl_svg_smart_mouse_down(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
 	Efl_Svg_Smart *thiz = (Efl_Svg_Smart *)data;
-/* 	Evas_Event_Mouse_Down *ev = event_info; */
+ 	Evas_Event_Mouse_Down *ev = event_info;
+	Evas_Coord ix, iy;
+
 	egueb_svg_document_feed_mouse_down(thiz->doc, 0);
+
+	thiz->down = EINA_TRUE;
+	evas_object_geometry_get(thiz->img, &ix, &iy, NULL, NULL);
+	thiz->down_x = ev->canvas.x;
+	thiz->down_y = ev->canvas.y;
+	thiz->img_down_x = ix;
+	thiz->img_down_y = iy;
+
+	{
+		Egueb_Dom_Node *svg;
+		egueb_dom_document_element_get(thiz->doc, &svg);
+		ERR("Setting scale to 2x");
+		egueb_svg_element_svg_current_scale_set(svg, 2);
+		egueb_dom_node_unref(svg);
+	}
 }
 
 static void _efl_svg_smart_mouse_move(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info)
@@ -218,6 +250,17 @@ static void _efl_svg_smart_mouse_move(void *data, Evas *e EINA_UNUSED, Evas_Obje
 	int svgx;
 	int svgy;
 
+	/* check if we are dragging */
+	if (thiz->down && thiz->zoom_and_pan)
+	{
+		Evas_Coord nx, ny;
+		
+		/* TODO if we do, first send the mouse up on the doc */
+		nx = thiz->img_down_x + (ev->cur.canvas.x - thiz->down_x);
+		ny = thiz->img_down_y + (ev->cur.canvas.y - thiz->down_y);
+		/* start moving the image origin */
+		evas_object_move(thiz->img, nx, ny);
+	}
 	evas_object_geometry_get(thiz->img, &ix, &iy, NULL, NULL);
 	svgx = ev->cur.canvas.x - ix;
 	svgy = ev->cur.canvas.y - iy;
@@ -401,6 +444,7 @@ static void _efl_svg_smart_reconfigure(Efl_Svg_Smart *thiz)
 	/* resize the image */
 	egueb_svg_document_width_set(thiz->doc, w);
 	egueb_svg_document_height_set(thiz->doc, h);
+	egueb_dom_document_process(thiz->doc);
 	egueb_svg_document_actual_width_get(thiz->doc, &aw);
 	egueb_svg_document_actual_height_get(thiz->doc, &ah);
 
@@ -454,6 +498,12 @@ static void _efl_svg_smart_add(Evas_Object *obj)
 	thiz = calloc(1, sizeof(Efl_Svg_Smart));
 	thiz->o = obj;
 
+	/* set default properties */
+	thiz->debug_damage = EINA_FALSE;
+	thiz->zoom_and_pan = EINA_TRUE;
+	thiz->fps = 30;
+
+	/* create the evas objects */
 	e = evas_object_evas_get(obj);
 	thiz->evas = e;
 
@@ -461,16 +511,16 @@ static void _efl_svg_smart_add(Evas_Object *obj)
 	evas_object_color_set(thiz->bkg, 255, 255, 255, 255);
 	evas_object_smart_member_add(thiz->bkg, obj);
 
+#if 0
 	thiz->img_clip = evas_object_rectangle_add(e);
 	evas_object_color_set(thiz->img_clip, 255, 255, 255, 255);
 	evas_object_smart_member_add(thiz->img_clip, obj);
+#endif
 
    	thiz->img = evas_object_image_add(e);
 	evas_object_image_alpha_set(thiz->img, EINA_TRUE);
-	evas_object_clip_set(thiz->img, thiz->img_clip);
+	//evas_object_clip_set(thiz->img, thiz->img_clip);
 	evas_object_smart_member_add(thiz->img, obj);
-
-	thiz->fps = 30;
 
 	/* the idler */
 	thiz->idler = ecore_idle_enterer_add(_efl_svg_smart_idler_cb, thiz);
@@ -531,8 +581,10 @@ static void _efl_svg_smart_del(Evas_Object *obj)
 
 	thiz = evas_object_smart_data_get(obj);
 	egueb_dom_node_unref(thiz->doc);
-	/* TODO the idler */
-	/* TODO the animator */
+	/* the idler */
+	ecore_idle_enterer_del(thiz->idler);
+	/* the animator */
+	ecore_timer_del(thiz->animator);
 	/* TODO the gl_surface */
 	/* TODO the gl_pool */
 	/* TODO the damage_objects and rectangles */
@@ -711,9 +763,6 @@ EAPI void efl_svg_file_set(Evas_Object *o, const char *file)
 	}
 	egueb_dom_parser_parse(im, thiz->doc);
 	enesim_image_data_free(im);
-#if 0
-	egueb_svg_element_svg_application_descriptor_set(e, &_efl_svg_smart_descriptor, thiz);
-#endif
 	thiz->file = strdup(file);
 	strncpy(base_dir, thiz->file, PATH_MAX);
 	tmp = dirname(base_dir);
@@ -759,4 +808,11 @@ EAPI void efl_svg_fps_set(Evas_Object *o, int fps)
 		egueb_svg_element_svg_animations_fps_set(svg, thiz->fps);
 		egueb_dom_node_unref(svg);
 	}
+}
+
+EAPI void efl_svg_zoom_and_pan_enable(Evas_Object *o, Eina_Bool enable)
+{
+	Efl_Svg_Smart *thiz;
+	thiz = evas_object_smart_data_get(o);
+	thiz->zoom_and_pan = enable;
 }
