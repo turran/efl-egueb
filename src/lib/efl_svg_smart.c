@@ -290,6 +290,8 @@ static Eina_Bool _efl_svg_smart_idler_cb(void *data)
 		thiz->go_to = NULL;
 		new_svg = EINA_TRUE;
 	}
+	if (!egueb_dom_document_needs_process(thiz->doc))
+		goto done;
 
 	egueb_dom_document_process(thiz->doc);
 	if (new_svg)
@@ -421,6 +423,46 @@ static void _efl_svg_smart_sw_surface_reconfigure(Efl_Svg_Smart *thiz, Evas_Coor
 				iw, ih, EINA_FALSE, data, stride, NULL, NULL);
 	}
 }
+
+#if 0
+static void _efl_svg_smart_surface_reconfigure(Efl_Svg_Smart *thiz, Evas_Coord iw,
+		Evas_Coord ih)
+{
+	egueb_svg_document_actual_width_get(thiz->doc, &aw);
+	egueb_svg_document_actual_height_get(thiz->doc, &ah);
+
+	evas_object_image_size_get(thiz->img, &iw, &ih);
+	w = ceil(aw);
+	h = ceil(ah);
+	if ((iw != w) || (ih != h))
+	{
+		evas_object_resize(thiz->img, w, h);
+		evas_object_image_size_set(thiz->img, w, h);
+		evas_object_image_fill_set(thiz->img, 0, 0, w, h);
+		if (thiz->backend == ENESIM_BACKEND_SOFTWARE)
+		{
+			_efl_svg_smart_sw_surface_reconfigure(thiz, w, h);
+		}
+#if HAVE_GL
+		else if (thiz->backend == ENESIM_BACKEND_OPENGL)
+		{
+			_efl_svg_smart_opengl_surface_reconfigure(thiz, w, h);
+		}
+#endif
+	}
+
+	/* center the image */
+	ix = x;
+	if (thiz->w > w)
+		ix += (thiz->w - w) / 2;
+	iy = y;
+	if (thiz->h > h)
+		iy += (thiz->h - h) / 2;
+	thiz->ix = ix;
+	thiz->iy = iy;
+	evas_object_move(thiz->img, ix, iy);
+}
+#endif
 
 static void _efl_svg_smart_reconfigure(Efl_Svg_Smart *thiz)
 {
