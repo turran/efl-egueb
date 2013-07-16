@@ -50,8 +50,13 @@ typedef struct _Efl_Svg_Smart
 	Evas *evas;
 	Evas_Object *o;
 
+	/* image position */
 	Evas_Coord ix, iy;
+
+	/* smart position and size */
 	Evas_Coord x, y, w, h;
+
+	/* internal smart objects */
 	Evas_Object *bkg;
 	Evas_Object *img;
 	Evas_Object *img_clip;
@@ -136,6 +141,16 @@ static void _efl_svg_smart_benchmark(Eina_Bool start)
 	INF("Drawing took %g at %g", t - last, last - td);
 	td = t;
 	last = t;
+}
+
+static inline double _efl_svg_smart_timestamp_get(void)
+{
+	struct timeval timev;
+	double t;
+
+	gettimeofday(&timev, NULL);
+	t = (double)timev.tv_sec + (((double)timev.tv_usec) / 1000000);
+	return t;
 }
 
 static Eina_Bool _efl_svg_smart_damages(Egueb_Dom_Node *e EINA_UNUSED, Eina_Rectangle *area, void *data)
@@ -267,94 +282,39 @@ static void _efl_svg_smart_mouse_move(void *data, Evas *e EINA_UNUSED, Evas_Obje
 	egueb_svg_document_feed_mouse_move(thiz->doc, svgx, svgy);
 }
 
-/* The reason to create another idler is because evas does not allow to hook
- * before the evas_render() is begin called. The smart calculate is the most similar
- * case, but whenever you enqueue your calculate during a calculate, it will get
- * triggered again on the same cycle, not the next one.
- */
-static Eina_Bool _efl_svg_smart_idler_cb(void *data)
+static void _efl_svg_smart_reconfigure(Efl_Svg_Smart *thiz)
 {
-	Efl_Svg_Smart *thiz = (Efl_Svg_Smart *)data;
-	Egueb_Dom_Node *svg = NULL;
-	Enesim_Log *error = NULL;
-	Eina_Rectangle *r;
-	Eina_Bool new_svg = EINA_FALSE;
-	Eina_Bool ret;
+	Evas_Coord x, y, w, h;
+	Evas_Coord ix, iy, iw, ih;
 
-	egueb_dom_document_element_get(thiz->doc, &svg);
-	if (!svg) goto done;
-	if (thiz->go_to)
-	{
-		efl_svg_file_set(thiz->o, thiz->go_to);
-		free(thiz->go_to);
-		thiz->go_to = NULL;
-		new_svg = EINA_TRUE;
-	}
-	if (!egueb_dom_document_needs_process(thiz->doc))
-		goto done;
+	w = thiz->w;
+	h = thiz->h;
+	x = thiz->x;
+	y = thiz->y;
 
-	egueb_dom_document_process(thiz->doc);
-	if (new_svg)
-	{
-		Evas_Coord x;
-		Evas_Coord y;
-		Evas_Coord ix;
-		Evas_Coord iy;
+	/* resize and move the main background object */
+	evas_object_move(thiz->bkg, x, y);
+	evas_object_resize(thiz->bkg, w, h);
 
-		/* feed a mouse move event to inform our current cursor position */
-		evas_object_geometry_get(thiz->img, &ix, &iy, NULL, NULL);
-		evas_pointer_canvas_xy_get(thiz->evas, &x, &y);
-		egueb_svg_document_feed_mouse_move(svg, x - ix, y - iy);
-	}
-	/* get the damages */
-	_efl_svg_smart_damage_clear(thiz);
-	egueb_svg_document_damages_get(thiz->doc, _efl_svg_smart_damages, thiz);
-	if (!thiz->damage_rectangles) goto done;
+	/* do the same on the clip */
+	evas_object_move(thiz->img_clip, x, y);
+	evas_object_resize(thiz->img_clip, w, h);
 
-	/* FIXME from the docs, looks like if i put true on the second argument, the whole data
-	 * will be invalidated, but then, it says that i should call update_add ... weird
-	 */
-	if (!thiz->s)
-		goto no_surface;
-#if HAVE_GL
-	if (thiz->backend == ENESIM_BACKEND_OPENGL)
-	{
-		evas_gl_make_current(thiz->gl_evas, thiz->gl_surface, thiz->gl_ctx);
-	}
-#endif
+	/* resize the document */
+	egueb_svg_document_width_set(thiz->doc, w);
+	egueb_svg_document_height_set(thiz->doc, h);
 
-	_efl_svg_smart_benchmark(EINA_TRUE);
-	/* we use the fill variant given that we need to overwrite what is in the image */
-	ret = egueb_svg_element_svg_fill_list(svg, thiz->s, thiz->damage_rectangles, 0, 0, &error);
-	_efl_svg_smart_benchmark(EINA_FALSE);
-	if (!ret)
-	{
-		ERR("Error drawing");
-		if (error)
-		{
-			enesim_log_dump(error);
-			enesim_log_delete(error);
-		}
-	}
-	/* free the list and its rectangles too, this should change whenever the rects are cached */
-no_surface:
-	EINA_LIST_FREE(thiz->damage_rectangles, r)
-	{
-		evas_object_image_data_update_add(thiz->img, r->x, r->y, r->w, r->h);
-		free(r);
-	}
-	thiz->damage_rectangles = NULL;
-	/* TODO mark evas to pick again the damaged pixels not the whole surface */
-#if 0
+	/* center the image */
 	evas_object_image_size_get(thiz->img, &iw, &ih);
-	evas_object_image_data_update_add(thiz->img, 0, 0, iw, ih);
-#endif
-done:
-	if (svg)
-	{
-		egueb_dom_node_unref(svg);
-	}
-	return EINA_TRUE;
+	ix = x;
+	if (thiz->w > iw)
+		ix += (thiz->w - iw) / 2;
+	iy = y;
+	if (thiz->h > ih)
+		iy += (thiz->h - ih) / 2;
+	thiz->ix = ix;
+	thiz->iy = iy;
+	evas_object_move(thiz->img, ix, iy);
 }
 
 #ifdef HAVE_GL
@@ -424,73 +384,17 @@ static void _efl_svg_smart_sw_surface_reconfigure(Efl_Svg_Smart *thiz, Evas_Coor
 	}
 }
 
-#if 0
-static void _efl_svg_smart_surface_reconfigure(Efl_Svg_Smart *thiz, Evas_Coord iw,
-		Evas_Coord ih)
+static Eina_Bool _efl_svg_smart_surface_reconfigure(Efl_Svg_Smart *thiz)
 {
-	egueb_svg_document_actual_width_get(thiz->doc, &aw);
-	egueb_svg_document_actual_height_get(thiz->doc, &ah);
-
-	evas_object_image_size_get(thiz->img, &iw, &ih);
-	w = ceil(aw);
-	h = ceil(ah);
-	if ((iw != w) || (ih != h))
-	{
-		evas_object_resize(thiz->img, w, h);
-		evas_object_image_size_set(thiz->img, w, h);
-		evas_object_image_fill_set(thiz->img, 0, 0, w, h);
-		if (thiz->backend == ENESIM_BACKEND_SOFTWARE)
-		{
-			_efl_svg_smart_sw_surface_reconfigure(thiz, w, h);
-		}
-#if HAVE_GL
-		else if (thiz->backend == ENESIM_BACKEND_OPENGL)
-		{
-			_efl_svg_smart_opengl_surface_reconfigure(thiz, w, h);
-		}
-#endif
-	}
-
-	/* center the image */
-	ix = x;
-	if (thiz->w > w)
-		ix += (thiz->w - w) / 2;
-	iy = y;
-	if (thiz->h > h)
-		iy += (thiz->h - h) / 2;
-	thiz->ix = ix;
-	thiz->iy = iy;
-	evas_object_move(thiz->img, ix, iy);
-}
-#endif
-
-static void _efl_svg_smart_reconfigure(Efl_Svg_Smart *thiz)
-{
-	Evas_Coord x, y, w, h;
-	Evas_Coord ix, iy, iw, ih;
+	Evas_Coord iw, ih;
+	Evas_Coord w, h;
 	double aw;
 	double ah;
 
-	w = thiz->w;
-	h = thiz->h;
-	x = thiz->x;
-	y = thiz->y;
-
-	/* resize and move the main background object */
-	evas_object_move(thiz->bkg, x, y);
-	evas_object_resize(thiz->bkg, w, h);
-	/* do the same on the clip */
-	evas_object_move(thiz->img_clip, x, y);
-	evas_object_resize(thiz->img_clip, w, h);
-
-	/* resize the image */
-	egueb_svg_document_width_set(thiz->doc, w);
-	egueb_svg_document_height_set(thiz->doc, h);
-	egueb_dom_document_process(thiz->doc);
 	egueb_svg_document_actual_width_get(thiz->doc, &aw);
 	egueb_svg_document_actual_height_get(thiz->doc, &ah);
-
 	evas_object_image_size_get(thiz->img, &iw, &ih);
+
 	w = ceil(aw);
 	h = ceil(ah);
 	if ((iw != w) || (ih != h))
@@ -508,19 +412,126 @@ static void _efl_svg_smart_reconfigure(Efl_Svg_Smart *thiz)
 			_efl_svg_smart_opengl_surface_reconfigure(thiz, w, h);
 		}
 #endif
+		//evas_object_image_data_update_add(thiz->img, 0, 0, w, h);
+		_efl_svg_smart_reconfigure(thiz);
+		return EINA_TRUE;
+	}
+	return EINA_FALSE;
+}
+
+
+/* The reason to create another idler is because evas does not allow to hook
+ * before the evas_render() is begin called. The smart calculate is the most similar
+ * case, but whenever you enqueue your calculate during a calculate, it will get
+ * triggered again on the same cycle, not the next one.
+ */
+static Eina_Bool _efl_svg_smart_idler_cb(void *data)
+{
+	Efl_Svg_Smart *thiz = (Efl_Svg_Smart *)data;
+	Egueb_Dom_Node *svg = NULL;
+	Enesim_Log *error = NULL;
+	Eina_Rectangle *r;
+	Eina_Bool new_svg = EINA_FALSE;
+	Eina_Bool ret;
+	/* for benchmarking */
+	double draw_start, draw_end;
+	double process_start, process_end;
+
+	/* check that we have a topmost svg */
+	egueb_dom_document_element_get(thiz->doc, &svg);
+	if (!svg) goto done;
+
+	/* check if we dont have to jump to another svg */
+	if (thiz->go_to)
+	{
+		efl_svg_file_set(thiz->o, thiz->go_to);
+		free(thiz->go_to);
+		thiz->go_to = NULL;
+		new_svg = EINA_TRUE;
 	}
 
-	/* center the image */
-	ix = x;
-	if (thiz->w > w)
-		ix += (thiz->w - w) / 2;
-	iy = y;
-	if (thiz->h > h)
-		iy += (thiz->h - h) / 2;
-	thiz->ix = ix;
-	thiz->iy = iy;
-	evas_object_move(thiz->img, ix, iy);
+	/* check if we need to process the document, if not, then dont ask
+	 * for the damages
+	 */
+	if (!egueb_dom_document_needs_process(thiz->doc))
+		goto done;
+
+	/* ok, lets process the document and check for its damages */
+	process_start = _efl_svg_smart_timestamp_get();
+	egueb_dom_document_process(thiz->doc);
+	process_end = _efl_svg_smart_timestamp_get();
+	INF("Processing took %g", process_end - process_start);
+
+	/* if we jumped to a new svg, be sure to send the mouse move */
+	if (new_svg)
+	{
+		Evas_Coord x;
+		Evas_Coord y;
+		Evas_Coord ix;
+		Evas_Coord iy;
+
+		/* feed a mouse move event to inform our current cursor position */
+		evas_object_geometry_get(thiz->img, &ix, &iy, NULL, NULL);
+		evas_pointer_canvas_xy_get(thiz->evas, &x, &y);
+		egueb_svg_document_feed_mouse_move(svg, x - ix, y - iy);
+	}
+
+	/* check if the size has changed, if so, create a new surface */
+	_efl_svg_smart_surface_reconfigure(thiz);
+
+	/* get the damages */
+	_efl_svg_smart_damage_clear(thiz);
+	egueb_svg_document_damages_get(thiz->doc, _efl_svg_smart_damages, thiz);
+	if (!thiz->damage_rectangles) goto done;
+
+	/* FIXME from the docs, looks like if i put true on the second argument, the whole data
+	 * will be invalidated, but then, it says that i should call update_add ... weird
+	 */
+	if (!thiz->s)
+		goto no_surface;
+#if HAVE_GL
+	if (thiz->backend == ENESIM_BACKEND_OPENGL)
+	{
+		evas_gl_make_current(thiz->gl_evas, thiz->gl_surface, thiz->gl_ctx);
+	}
+#endif
+
+	draw_start = _efl_svg_smart_timestamp_get();
+	/* we use the fill variant given that we need to overwrite what is in the image */
+	ret = egueb_svg_element_svg_fill_list(svg, thiz->s, thiz->damage_rectangles, 0, 0, &error);
+	draw_end = _efl_svg_smart_timestamp_get();
+	if (!ret)
+	{
+		ERR("Error drawing");
+		if (error)
+		{
+			enesim_log_dump(error);
+			enesim_log_delete(error);
+		}
+	}
+	INF("Drawing took %g", draw_end - draw_start);
+	/* free the list and its rectangles too, this should change whenever the rects are cached */
+no_surface:
+	EINA_LIST_FREE(thiz->damage_rectangles, r)
+	{
+		evas_object_image_data_update_add(thiz->img, r->x, r->y, r->w, r->h);
+		free(r);
+	}
+	thiz->damage_rectangles = NULL;
+	/* TODO mark evas to pick again the damaged pixels not the whole surface */
+#if 0
+	evas_object_image_size_get(thiz->img, &iw, &ih);
+	evas_object_image_data_update_add(thiz->img, 0, 0, iw, ih);
+#endif
+done:
+	if (svg)
+	{
+		egueb_dom_node_unref(svg);
+	}
+	
+	return EINA_TRUE;
 }
+
 /*----------------------------------------------------------------------------*
  *                           Smart object interface                           *
  *----------------------------------------------------------------------------*/
@@ -815,7 +826,6 @@ EAPI void efl_svg_file_set(Evas_Object *o, const char *file)
 		thiz->base_dir = strdup(tmp);
 	}
 	evas_object_smart_changed(o);
-	_efl_svg_smart_reconfigure(thiz);
 }
 
 EAPI const char * efl_svg_file_get(Evas_Object *o)
