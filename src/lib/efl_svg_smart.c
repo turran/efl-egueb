@@ -791,7 +791,7 @@ EAPI Egueb_Dom_Node * efl_svg_document_get(Evas_Object *o)
 EAPI void efl_svg_file_set(Evas_Object *o, const char *file)
 {
 	Efl_Svg_Smart *thiz;
-	Enesim_Image_Data *im;
+	Enesim_Stream *im;
 	char base_dir[PATH_MAX];
 	char *tmp;
 
@@ -809,13 +809,13 @@ EAPI void efl_svg_file_set(Evas_Object *o, const char *file)
 
 	if (!file) return;
 
-	im = enesim_image_data_file_new(file, "r+");
+	im = enesim_stream_file_new(file, "r+");
 	if (!im)
 	{
 		return;
 	}
 	egueb_dom_parser_parse(im, thiz->doc);
-	enesim_image_data_free(im);
+	enesim_stream_free(im);
 	thiz->file = strdup(file);
 	strncpy(base_dir, thiz->file, PATH_MAX);
 	tmp = dirname(base_dir);

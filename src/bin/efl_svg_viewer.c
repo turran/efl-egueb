@@ -103,15 +103,15 @@ static void _cb_next(void *data, Evas *e, Evas_Object *obj, void *event_info)
 static void _cb_dir(const char *name, const char *path, void *user_data)
 {
 	Efl_Svg_Smart_Dir_Data *data = user_data;
-	Enesim_Image_Data *enesim_image_data;
+	Enesim_Stream *enesim_stream;
 	char file[PATH_MAX];
 	const char *mime;
 
 	snprintf(file, PATH_MAX, "%s/%s", path, name);
 	/* check if the file is a svg */
-	enesim_image_data = enesim_image_data_file_new(file, "rb");
-	mime = enesim_image_mime_data_from(enesim_image_data);
-	enesim_image_data_free(enesim_image_data);
+	enesim_stream = enesim_stream_file_new(file, "rb");
+	mime = enesim_image_mime_data_from(enesim_stream);
+	enesim_stream_free(enesim_stream);
 	if (!mime) return;
 	if (strcmp(mime, "image/svg+xml"))
 		return;
