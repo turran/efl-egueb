@@ -18,8 +18,6 @@ typedef struct _Efl_Svg_Viewer
 	Eina_List *files;
 	Eina_List *current;
 	char *location;
-	Evas_Object *prev;
-	Evas_Object *next;
 	Evas_Object *svg;
 	int width;
 	int height;
@@ -72,6 +70,7 @@ static void _cb_resize(Ecore_Evas *ee)
 	/* TODO put the controls on the same position */
 }
 
+#if 0
 static void _cb_prev(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
 	Efl_Svg_Viewer *thiz = data;
@@ -99,6 +98,7 @@ static void _cb_next(void *data, Evas *e, Evas_Object *obj, void *event_info)
 	printf("setting file %s\n", file);
 	efl_svg_file_set(thiz->svg, file);
 }
+#endif
 
 static void _cb_dir(const char *name, const char *path, void *user_data)
 {
@@ -275,26 +275,6 @@ int main(int argc, char *argv[])
 	evas_object_show(o);
 	evas_object_name_set(o, "svg");
 	thiz.svg = o;
-
-	/* create the UI to go to the next file, prev file, play puase, etc ... */
-	/* one image for the prev, put it always in the bottom left */
-	o = evas_object_rectangle_add(evas);
-	evas_object_name_set(o, "prev");
-	evas_object_resize(o, 25, 25);
-	evas_object_move(o, 10, height - 25 - 10);
-	evas_object_color_set(o, 255, 255, 0, 255);
-	evas_object_show(o);
-	evas_object_event_callback_add(o, EVAS_CALLBACK_MOUSE_DOWN, _cb_prev, &thiz);
-	thiz.prev = o;
-	/* one image for the next, put it always next to the prev */
-	o = evas_object_rectangle_add(evas);
-	evas_object_name_set(o, "next");
-	evas_object_resize(o, 25, 25);
-	evas_object_move(o, 10 + 25 + 10, height - 25 - 10);
-	evas_object_color_set(o, 255, 0, 255, 255);
-	evas_object_show(o);
-	evas_object_event_callback_add(o, EVAS_CALLBACK_MOUSE_DOWN, _cb_next, &thiz);
-	thiz.next = o;
 
 	ecore_evas_resize(ee, width, height);
 	ecore_evas_show(ee);
