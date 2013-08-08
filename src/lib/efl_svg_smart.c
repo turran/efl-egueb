@@ -124,25 +124,6 @@ static Esvg_Element_Svg_Application_Descriptor _efl_svg_smart_descriptor = {
 };
 #endif
 
-static void _efl_svg_smart_benchmark(Eina_Bool start)
-{
-	static double last = 0;
-	static double td = 0;
-	struct timeval timev;
-	double t;
-
-	gettimeofday(&timev, NULL);
-	t = (double)timev.tv_sec + (((double)timev.tv_usec) / 1000000);
-	if (start)
-	{
-		last = t;
-		return;
-	}
-	INF("Drawing took %g at %g", t - last, last - td);
-	td = t;
-	last = t;
-}
-
 static inline double _efl_svg_smart_timestamp_get(void)
 {
 	struct timeval timev;
@@ -175,7 +156,8 @@ static Eina_Bool _efl_svg_smart_damages(Egueb_Dom_Node *e EINA_UNUSED, Eina_Rect
 			evas_object_color_set(o, 64, 0, 0, 64);
 			thiz->damage_objects = eina_list_append(thiz->damage_objects, o);
 		}
-		DBG("Adding rectangle object at %d %d", thiz->ix, thiz->iy);
+		DBG("<%s> Adding rectangle object at %d %d",
+				evas_object_name_get(thiz->o), thiz->ix, thiz->iy);
 		evas_object_move(o, r->x + thiz->ix, r->y + thiz->iy);
 		evas_object_resize(o, r->w, r->h);
 		evas_object_show(o);
@@ -226,7 +208,7 @@ static void _efl_svg_smart_mouse_up(void *data, Evas *e EINA_UNUSED, Evas_Object
 	{
 		Egueb_Dom_Node *svg;
 		egueb_dom_document_element_get(thiz->doc, &svg);
-		ERR("Setting scale to 1x");
+		ERR("<%s> Setting scale to 1x", evas_object_name_get(thiz->o));
 		egueb_svg_element_svg_current_scale_set(svg, 1);
 		egueb_dom_node_unref(svg);
 	}
@@ -250,7 +232,7 @@ static void _efl_svg_smart_mouse_down(void *data, Evas *e EINA_UNUSED, Evas_Obje
 	{
 		Egueb_Dom_Node *svg;
 		egueb_dom_document_element_get(thiz->doc, &svg);
-		ERR("Setting scale to 2x");
+		ERR("<%s> Setting scale to 2x", evas_object_name_get(thiz->o));
 		egueb_svg_element_svg_current_scale_set(svg, 2);
 		egueb_dom_node_unref(svg);
 	}
@@ -414,6 +396,9 @@ static Eina_Bool _efl_svg_smart_surface_reconfigure(Efl_Svg_Smart *thiz)
 #endif
 		//evas_object_image_data_update_add(thiz->img, 0, 0, w, h);
 		_efl_svg_smart_reconfigure(thiz);
+		ERR("<%s> Creating a surface with size %d %d at %d %d",
+				evas_object_name_get(thiz->o), w, h, thiz->ix,
+				thiz->iy);
 		return EINA_TRUE;
 	}
 	return EINA_FALSE;
@@ -460,7 +445,8 @@ static Eina_Bool _efl_svg_smart_idler_cb(void *data)
 	process_start = _efl_svg_smart_timestamp_get();
 	egueb_dom_document_process(thiz->doc);
 	process_end = _efl_svg_smart_timestamp_get();
-	INF("Processing took %g", process_end - process_start);
+	INF("<%s> Processing took %g", evas_object_name_get(thiz->o),
+			process_end - process_start);
 
 	/* if we jumped to a new svg, be sure to send the mouse move */
 	if (new_svg)
@@ -509,7 +495,8 @@ static Eina_Bool _efl_svg_smart_idler_cb(void *data)
 			enesim_log_delete(error);
 		}
 	}
-	INF("Drawing took %g", draw_end - draw_start);
+	INF("<%s> Drawing took %g", evas_object_name_get(thiz->o),
+			draw_end - draw_start);
 	/* free the list and its rectangles too, this should change whenever the rects are cached */
 no_surface:
 	EINA_LIST_FREE(thiz->damage_rectangles, r)
@@ -562,17 +549,24 @@ static void _efl_svg_smart_add(Evas_Object *obj)
 
 	thiz->bkg = evas_object_rectangle_add(e);
 	evas_object_color_set(thiz->bkg, 255, 255, 255, 255);
+	/* FIXME In theory if we have a smart object below us and
+	 * we ar enot on top of the svg area (img) but on the
+	 * background (bkg) object, any event there should be
+	 * passed to the lower (smart object), but it does
+	 * not work either ....
+	 */
+	//evas_object_pass_events_set(obj, EINA_TRUE);
 	evas_object_smart_member_add(thiz->bkg, obj);
 
-#if 0
 	thiz->img_clip = evas_object_rectangle_add(e);
 	evas_object_color_set(thiz->img_clip, 255, 255, 255, 255);
 	evas_object_smart_member_add(thiz->img_clip, obj);
-#endif
 
    	thiz->img = evas_object_image_add(e);
 	evas_object_image_alpha_set(thiz->img, EINA_TRUE);
-	//evas_object_clip_set(thiz->img, thiz->img_clip);
+	/* FIXME if we use this the event propagation is slow as hell! */
+	//evas_object_precise_is_inside_set(thiz->img, EINA_TRUE);
+	evas_object_clip_set(thiz->img, thiz->img_clip);
 	evas_object_smart_member_add(thiz->img, obj);
 
 	/* the idler */
@@ -729,9 +723,8 @@ static void _efl_svg_smart_clip_unset(Evas_Object *obj EINA_UNUSED)
 
 static void _efl_svg_smart_init(void)
 {
-	if (_smart) return;
+	if (!_smart)
 	{
-
 		static Evas_Smart_Class sc = EVAS_SMART_CLASS_INIT_NAME_VERSION("_efl_svg");
 		if (!sc.add)
 		{
