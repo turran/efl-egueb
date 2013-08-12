@@ -484,7 +484,7 @@ static Eina_Bool _efl_svg_smart_idler_cb(void *data)
 
 	draw_start = _efl_svg_smart_timestamp_get();
 	/* we use the fill variant given that we need to overwrite what is in the image */
-	ret = egueb_svg_element_svg_draw_list(svg, thiz->s, ENESIM_FILL, thiz->damage_rectangles, 0, 0, &error);
+	ret = egueb_svg_element_svg_draw_list(svg, thiz->s, ENESIM_ROP_FILL, thiz->damage_rectangles, 0, 0, &error);
 	draw_end = _efl_svg_smart_timestamp_get();
 	if (!ret)
 	{
