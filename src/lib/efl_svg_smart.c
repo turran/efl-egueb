@@ -143,7 +143,7 @@ static Eina_Bool _efl_svg_smart_damages(Egueb_Dom_Node *e EINA_UNUSED, Eina_Rect
 	r = malloc(sizeof(Eina_Rectangle));
 	*r = *area;
 
-	INF("Adding damage at %" EINA_EXTRA_RECTANGLE_FORMAT, EINA_EXTRA_RECTANGLE_ARGS(area));
+	INF("Adding damage at %" EINA_RECTANGLE_FORMAT, EINA_RECTANGLE_ARGS(area));
 	thiz->damage_rectangles = eina_list_append(thiz->damage_rectangles, r);
 	if (thiz->debug_damage)
 	{
@@ -190,7 +190,7 @@ static Eina_Bool _efl_svg_smart_animator_cb(void *data)
 	Efl_Svg_Smart *thiz = data;
 	Egueb_Dom_Node *svg = NULL;;
 
-	egueb_dom_document_element_get(thiz->doc, &svg);
+	svg = egueb_dom_document_element_get(thiz->doc);
 	if (!svg) goto done;
 
 	egueb_svg_element_svg_time_tick(svg);
@@ -207,7 +207,7 @@ static void _efl_svg_smart_mouse_up(void *data, Evas *e EINA_UNUSED, Evas_Object
 	thiz->down = EINA_FALSE;
 	{
 		Egueb_Dom_Node *svg;
-		egueb_dom_document_element_get(thiz->doc, &svg);
+		svg = egueb_dom_document_element_get(thiz->doc);
 		ERR("<%s> Setting scale to 1x", evas_object_name_get(thiz->o));
 		egueb_svg_element_svg_current_scale_set(svg, 1);
 		egueb_dom_node_unref(svg);
@@ -231,7 +231,7 @@ static void _efl_svg_smart_mouse_down(void *data, Evas *e EINA_UNUSED, Evas_Obje
 
 	{
 		Egueb_Dom_Node *svg;
-		egueb_dom_document_element_get(thiz->doc, &svg);
+		svg = egueb_dom_document_element_get(thiz->doc);
 		ERR("<%s> Setting scale to 2x", evas_object_name_get(thiz->o));
 		egueb_svg_element_svg_current_scale_set(svg, 2);
 		egueb_dom_node_unref(svg);
@@ -423,7 +423,7 @@ static Eina_Bool _efl_svg_smart_idler_cb(void *data)
 	double process_start, process_end;
 
 	/* check that we have a topmost svg */
-	egueb_dom_document_element_get(thiz->doc, &svg);
+	svg = egueb_dom_document_element_get(thiz->doc);
 	if (!svg) goto done;
 
 	/* check if we dont have to jump to another svg */
@@ -808,7 +808,7 @@ EAPI void efl_svg_file_set(Evas_Object *o, const char *file)
 		return;
 	}
 	egueb_dom_parser_parse(im, thiz->doc);
-	enesim_stream_free(im);
+	enesim_stream_unref(im);
 	thiz->file = strdup(file);
 	strncpy(base_dir, thiz->file, PATH_MAX);
 	tmp = dirname(base_dir);
@@ -847,7 +847,7 @@ EAPI void efl_svg_fps_set(Evas_Object *o, int fps)
 	/* remove the animtor and add another one with the correct fps */
 	thiz->fps = fps;
 	ecore_timer_interval_set(thiz->animator, 1.0/thiz->fps);
-	egueb_dom_document_element_get(thiz->doc, &svg);
+	svg = egueb_dom_document_element_get(thiz->doc);
 	if (svg)
 	{
 		egueb_svg_element_svg_animations_fps_set(svg, thiz->fps);

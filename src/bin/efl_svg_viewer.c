@@ -111,7 +111,7 @@ static void _cb_dir(const char *name, const char *path, void *user_data)
 	/* check if the file is a svg */
 	enesim_stream = enesim_stream_file_new(file, "rb");
 	mime = enesim_image_mime_data_from(enesim_stream);
-	enesim_stream_free(enesim_stream);
+	enesim_stream_unref(enesim_stream);
 	if (!mime) return;
 	if (strcmp(mime, "image/svg+xml"))
 		return;
