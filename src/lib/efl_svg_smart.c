@@ -606,6 +606,8 @@ static void _efl_svg_smart_add(Evas_Object *obj)
 		thiz->gl_cfg->multisample_bits = EVAS_GL_MULTISAMPLE_NONE;
 		thiz->gl_ctx = evas_gl_context_create(thiz->gl_evas, NULL);
 		thiz->gl_pool = enesim_pool_opengl_new();
+		/* use our own pool for temproary surface allocation */
+		enesim_pool_default_set(enesim_pool_ref(thiz->gl_pool));
 #endif
 	}
 	else
