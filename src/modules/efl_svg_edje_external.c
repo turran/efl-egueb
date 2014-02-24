@@ -3,8 +3,7 @@
 #endif
 
 #include <Edje.h>
-
-#include "Efl_Svg_Smart.h"
+#include "Efl_Svg.h"
 
 typedef struct _Edje_Svg_Params Edje_Svg_Params;
 
@@ -16,7 +15,7 @@ struct _Edje_Svg_Params
 static Evas_Object *
 _edje_svg_add(void *data EINA_UNUSED, Evas *evas, Evas_Object *edje EINA_UNUSED, const Eina_List *params EINA_UNUSED, const char *part_name EINA_UNUSED)
 {
-	return efl_svg_new(evas);
+	return efl_svg_smart_new(evas);
 }
 
 static void
@@ -28,7 +27,7 @@ _edje_svg_state_set(void *data EINA_UNUSED, Evas_Object *obj, const void *from_p
 	else if (from_params) p = from_params;
 	else return;
 
-	if (p->file) efl_svg_file_set(obj, p->file);
+	if (p->file) efl_svg_smart_file_set(obj, p->file);
 }
 
 static Eina_Bool
@@ -38,7 +37,7 @@ _edje_svg_param_set(void *data EINA_UNUSED, Evas_Object *obj, const Edje_Externa
 	{
 		if (param->type == EDJE_EXTERNAL_PARAM_TYPE_STRING)
 		{
-			efl_svg_file_set(obj, param->s);
+			efl_svg_smart_file_set(obj, param->s);
 			return EINA_TRUE;
 		}
 
@@ -53,7 +52,7 @@ _edje_svg_param_get(void *data EINA_UNUSED, const Evas_Object *obj, Edje_Externa
 	{
 		if (param->type == EDJE_EXTERNAL_PARAM_TYPE_STRING)
 		{
-			param->s = efl_svg_file_get((Evas_Object *)obj);
+			param->s = efl_svg_smart_file_get((Evas_Object *)obj);
 			return EINA_TRUE;
 		}
 	}

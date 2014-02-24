@@ -1,7 +1,7 @@
 
 m4_define([v_maj], [0])
 m4_define([v_min], [0])
-m4_define([v_mic], [2])
+m4_define([v_mic], [3])
 m4_define([v_ver], [v_maj.v_min.v_mic])
 
 m4_define([lt_cur], m4_eval(v_maj + v_min))
@@ -52,7 +52,7 @@ fi
 
 ### Checks for libraries
 
-requirements_pc="egueb-svg >= 0.0.21 enesim >= 0.0.15 eina-extra  >= 0.0.1 ecore >= 1.2.0 evas >= 1.2.0 eina >= 1.2.0"
+requirements_pc="egueb-svg >= 0.0.21 enesim >= 0.0.15 ecore >= 1.2.0 evas >= 1.2.0 eina >= 1.2.0"
 PKG_CHECK_EXISTS([evas-opengl-x11 >= 1.2.0 enesim_opengl >= 0.0.15],
    [
     have_gl="yes"
@@ -75,6 +75,29 @@ if test "x${have_edje}" = "xyes" ; then
 fi
 
 AM_CONDITIONAL([BUILD_EDJE_EXTERNAL], [test "x${build_edje_external}" = "xyes"])
+
+AC_ARG_ENABLE([ecore-x], [AS_HELP_STRING([--enable-ecore-x], [Enable Ecore X window])],
+  [
+    if test "x$enableval" = "xyes" ; then
+       want_ecore_x="yes"
+    else
+       want_ecore_x="no"
+    fi
+  ],
+  [want_ecore_x="yes"]
+)
+PKG_CHECK_MODULES([EFL_SVG_X], [ecore-x], [have_ecore_x="yes"], [have_ecore_x="no"])
+build_ecore_x="no"
+
+if test "x${have_ecore_x}" = "xyes" -a "x${want_ecore_x}" = "xyes"; then
+  build_ecore_x="yes"
+  requirements_pc="${requirements_pc} ecore-x >= 1.7.99"
+fi
+
+if test "x${build_ecore_x}" = "xyes"; then
+  AC_DEFINE([BUILD_ECORE_X], [1], [Have support for ecore_x])
+fi
+AM_CONDITIONAL([BUILD_ECORE_X], [test "x${build_ecore_x}" = "xyes"])
 
 
 ### Checks for header files
@@ -119,6 +142,8 @@ echo "Configuration Options Summary:"
 echo
 echo "  OpenGL support............................: ${have_gl}"
 echo "  Edje external support.....................: ${build_edje_external}"
+echo "  Window support:"
+echo "    Ecore X.................................: ${build_ecore_x}"
 echo
 echo "Compilation.................................: make (or gmake)"
 echo "  CPPFLAGS..................................: $CPPFLAGS"

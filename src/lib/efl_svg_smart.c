@@ -1,18 +1,29 @@
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
+/* EFL-Egueb Egueb based EFL extensions
+ * Copyright (C) 2013 - 2014 Jorge Luis Zapata
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library.
+ * If not, see <http://www.gnu.org/licenses/>.
+ */
+#include "efl_svg_private.h"
+#include "efl_svg_main.h"
+#include "efl_svg_smart.h"
 
 #include <math.h>
 #include <libgen.h>
 #include <sys/time.h>
 
-#include <Evas.h>
-#include <Ecore.h>
-
-#include <Eina_Extra.h>
-
 #ifdef HAVE_GL
-# define ENESIM_EXTENSION
 # include <Enesim.h>
 /* FIXME this one is missing on the evas-gl */
 typedef double		GLdouble;	/* double precision float */
@@ -24,17 +35,6 @@ typedef double		GLdouble;	/* double precision float */
         printf("Error %x\n", err); \
         }
 #endif
-
-#include <Egueb_Svg.h>
-
-#define CRI(...) EINA_LOG_DOM_CRIT(_log, __VA_ARGS__)
-#define ERR(...) EINA_LOG_DOM_ERR(_log, __VA_ARGS__)
-#define WRN(...) EINA_LOG_DOM_WARN(_log, __VA_ARGS__)
-#define INF(...) EINA_LOG_DOM_INFO(_log, __VA_ARGS__)
-#define DBG(...) EINA_LOG_DOM_DBG(_log, __VA_ARGS__)
-
-#include "Efl_Svg_Smart.h"
-
 /*============================================================================*
  *                                  Local                                     *
  *============================================================================*/
@@ -92,12 +92,10 @@ typedef struct _Efl_Svg_Smart
 } Efl_Svg_Smart;
 
 static Evas_Smart *_smart = NULL;
-static int _init = 0;
-static int _log = -1;
 /*----------------------------------------------------------------------------*
  *                           Application interface                            *
  *----------------------------------------------------------------------------*/
-static const char * _efl_svg_mart_filename_get(void *user_data)
+static const char * _efl_svg_smart_filename_get(void *user_data)
 {
 	Efl_Svg_Smart *thiz = user_data;
 	return thiz->file;
@@ -429,7 +427,7 @@ static Eina_Bool _efl_svg_smart_idler_cb(void *data)
 	/* check if we dont have to jump to another svg */
 	if (thiz->go_to)
 	{
-		efl_svg_file_set(thiz->o, thiz->go_to);
+		efl_svg_smart_file_set(thiz->o, thiz->go_to);
 		free(thiz->go_to);
 		thiz->go_to = NULL;
 		new_svg = EINA_TRUE;
@@ -621,7 +619,7 @@ static void _efl_svg_smart_add(Evas_Object *obj)
 	/* create the document */
 	thiz->doc = egueb_svg_document_new(NULL);
 	/* set the different application callbacks */
-	egueb_svg_document_filename_get_cb_set(thiz->doc, _efl_svg_mart_filename_get, thiz);
+	egueb_svg_document_filename_get_cb_set(thiz->doc, _efl_svg_smart_filename_get, thiz);
 }
 
 static void _efl_svg_smart_del(Evas_Object *obj)
@@ -750,32 +748,14 @@ static void _efl_svg_smart_init(void)
 /*============================================================================*
  *                                   API                                      *
  *============================================================================*/
-EAPI int efl_svg_init(void)
-{
-	if (++_init != 1)
-		return _init;
-	egueb_svg_init();
-	_log = eina_log_domain_register("efl_svg", EINA_COLOR_BLUE);
-	return _init;
-}
-
-EAPI int efl_svg_shutdown(void)
-{
-	if (--_init != 0)
-		return _init;
-	eina_log_domain_unregister(_log);
-	egueb_svg_shutdown();
-	return _init;
-}
-
-EAPI Evas_Object * efl_svg_new(Evas *e)
+EAPI Evas_Object * efl_svg_smart_new(Evas *e)
 {
 	/* initialize our own smart class */
 	_efl_svg_smart_init();
 	return evas_object_smart_add(e, _smart);
 }
 
-EAPI Egueb_Dom_Node * efl_svg_document_get(Evas_Object *o)
+EAPI Egueb_Dom_Node * efl_svg_smart_document_get(Evas_Object *o)
 {
 	Efl_Svg_Smart *thiz;
 
@@ -783,7 +763,7 @@ EAPI Egueb_Dom_Node * efl_svg_document_get(Evas_Object *o)
 	return egueb_dom_node_ref(thiz->doc);	
 }
 
-EAPI void efl_svg_file_set(Evas_Object *o, const char *file)
+EAPI void efl_svg_smart_file_set(Evas_Object *o, const char *file)
 {
 	Efl_Svg_Smart *thiz;
 	Enesim_Stream *im;
@@ -823,7 +803,7 @@ EAPI void efl_svg_file_set(Evas_Object *o, const char *file)
 	evas_object_smart_changed(o);
 }
 
-EAPI const char * efl_svg_file_get(Evas_Object *o)
+EAPI const char * efl_svg_smart_file_get(Evas_Object *o)
 {
 	Efl_Svg_Smart *thiz;
 
@@ -831,7 +811,7 @@ EAPI const char * efl_svg_file_get(Evas_Object *o)
 	return thiz->file;
 }
 
-EAPI void efl_svg_debug_damage_set(Evas_Object *o, Eina_Bool debug)
+EAPI void efl_svg_smart_debug_damage_set(Evas_Object *o, Eina_Bool debug)
 {
 	Efl_Svg_Smart *thiz;
 
@@ -839,7 +819,7 @@ EAPI void efl_svg_debug_damage_set(Evas_Object *o, Eina_Bool debug)
 	thiz->debug_damage = debug;
 }
 
-EAPI void efl_svg_fps_set(Evas_Object *o, int fps)
+EAPI void efl_svg_smart_fps_set(Evas_Object *o, int fps)
 {
 	Efl_Svg_Smart *thiz;
 	Egueb_Dom_Node *svg = NULL;

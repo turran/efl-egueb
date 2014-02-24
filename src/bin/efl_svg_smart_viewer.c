@@ -11,7 +11,7 @@
 #include <Ecore_Evas.h>
 #include <Egueb_Svg.h>
 
-#include "Efl_Svg_Smart.h"
+#include "Efl_Svg.h"
 
 typedef struct _Efl_Svg_Viewer
 {
@@ -82,7 +82,7 @@ static void _cb_prev(void *data, Evas *e, Evas_Object *obj, void *event_info)
 	thiz->current = prev;
 	file = prev->data;
 	printf("setting file %s\n", file);
-	efl_svg_file_set(thiz->svg, file);
+	efl_svg_smart_file_set(thiz->svg, file);
 }
 
 static void _cb_next(void *data, Evas *e, Evas_Object *obj, void *event_info)
@@ -96,7 +96,7 @@ static void _cb_next(void *data, Evas *e, Evas_Object *obj, void *event_info)
 	thiz->current = next;
 	file = next->data;
 	printf("setting file %s\n", file);
-	efl_svg_file_set(thiz->svg, file);
+	efl_svg_smart_file_set(thiz->svg, file);
 }
 #endif
 
@@ -266,10 +266,10 @@ int main(int argc, char *argv[])
 	ecore_evas_callback_resize_set(ee, _cb_resize);
 
 	/* create the main svg object */
-	o = efl_svg_new(evas);
-	efl_svg_file_set(o, files->data);
-	efl_svg_debug_damage_set(o, damages);
-	efl_svg_fps_set(o, fps);
+	o = efl_svg_smart_new(evas);
+	efl_svg_smart_file_set(o, files->data);
+	efl_svg_smart_debug_damage_set(o, damages);
+	efl_svg_smart_fps_set(o, fps);
 	evas_object_move(o, 0, 0);
 	evas_object_resize(o, width, height);
 	evas_object_show(o);
