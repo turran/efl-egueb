@@ -110,8 +110,9 @@ int main(int argc, char *argv[])
 	if (!w)
 		goto shutdown_egueb_svg;
 
-	/* create the main svg object */
 	ecore_main_loop_begin();
+
+	efl_egueb_window_free(w);
 	efl_svg_shutdown();
 
 	return 0;

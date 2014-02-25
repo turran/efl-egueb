@@ -18,9 +18,11 @@
 #ifndef _EFL_EGUEB_WINDOW_PRIVATE_H_
 #define _EFL_EGUEB_WINDOW_PRIVATE_H_
 
+typedef void (*Efl_Egueb_Window_Descriptor_Free)(void *data);
+
 typedef struct _Efl_Egueb_Window_Descriptor
 {
-	
+	Efl_Egueb_Window_Descriptor_Free free;
 } Efl_Egueb_Window_Descriptor;
 
 
@@ -28,6 +30,7 @@ struct _Efl_Egueb_Window
 {
 	Egueb_Dom_Node *doc;
 	Egueb_Dom_Feature *render;
+	Ecore_Idle_Enterer *idle_enterer;
 	void *data;
 	const Efl_Egueb_Window_Descriptor *d;
 };

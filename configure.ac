@@ -52,7 +52,7 @@ fi
 
 ### Checks for libraries
 
-requirements_pc="egueb-svg >= 0.0.21 enesim >= 0.0.15 ecore >= 1.2.0 evas >= 1.2.0 eina >= 1.2.0"
+requirements_pc="egueb-dom >= 0.0.23 egueb-svg >= 0.0.23 enesim >= 0.0.15 ecore >= 1.2.0 evas >= 1.2.0 eina >= 1.2.0"
 PKG_CHECK_EXISTS([evas-opengl-x11 >= 1.2.0 enesim_opengl >= 0.0.15],
    [
     have_gl="yes"
@@ -63,7 +63,7 @@ PKG_CHECK_EXISTS([evas-opengl-x11 >= 1.2.0 enesim_opengl >= 0.0.15],
 AC_SUBST([requirements_pc])
 PKG_CHECK_MODULES([EFL_SVG], [${requirements_pc}])
 
-PKG_CHECK_MODULES([EFL_SVG_BIN], [egueb-svg >= 0.0.21 enesim >= 0.0.15 ecore-evas >= 1.2.0 ecore >= 1.2.0 evas >= 1.2.0 eina >= 1.2.0])
+PKG_CHECK_MODULES([EFL_SVG_BIN], [egueb-dom >= 0.0.23 egueb-svg >= 0.0.23 enesim >= 0.0.15 ecore-evas >= 1.2.0 ecore >= 1.2.0 evas >= 1.2.0 eina >= 1.2.0])
 
 PKG_CHECK_MODULES([EFL_SVG_EDJE_EXTERNAL], [edje >= 1.0.99], [have_edje="yes"], [have_edje="no"])
 

@@ -23,17 +23,24 @@
 
 #include "efl_egueb_window_private.h"
 #include "Efl_Egueb_Window_X.h"
+
+#include <X11/Xlib.h>
+#include <X11/Xutil.h>
 /*============================================================================*
  *                                  Local                                     *
  *============================================================================*/
 typedef struct _Efl_Egueb_Window_X
 {
+	Efl_Egueb_Window *base;
 	Ecore_X_Window win;
 	Ecore_X_Screen *screen;
 	Ecore_X_Visual visual;
 	Ecore_X_Colormap colormap;
 	Ecore_X_Image *xim;
-	Enesim_Buffer *buffer;
+	/* the event handlers */
+	Ecore_Event_Handler *handlers[13];
+	Enesim_Buffer *b;
+	Enesim_Surface *s;
 	Eina_Bool argb;
 	int depth;
 	int w;
@@ -41,7 +48,134 @@ typedef struct _Efl_Egueb_Window_X
 } Efl_Egueb_Window_X;
 
 static int _init_count = 0;
-static Ecore_Event_Handler *_handlers[13];
+
+static inline void _mask_to_offset_and_length(int value, uint8_t *offset, uint8_t *len)
+{
+	*len = 0;
+	*offset = 0;
+	printf("%08x\n", value);
+	while (value)
+	{
+		if (value & 1)
+		{
+			while (value)
+			{
+				if (!(value & 1))
+					break;
+				value >>= 1;
+				(*len)++;
+			}
+			return;
+		}
+		(*offset)++;
+		value >>= 1;
+	}
+}
+
+/*----------------------------------------------------------------------------*
+ *                               Event handlers                               *
+ *----------------------------------------------------------------------------*/
+static Eina_Bool _efl_egueb_window_x_event_mouse_in(void *data,
+		int type, void *event)
+{
+	printf("mouse in\n");
+	return EINA_TRUE;
+}
+
+static Eina_Bool _efl_egueb_window_x_event_mouse_out(void *data,
+		int type, void *event)
+{
+	printf("mouse out\n");
+	return EINA_TRUE;
+}
+
+static Eina_Bool _efl_egueb_window_x_event_window_focus_in(void *data,
+		int type, void *event)
+{
+	printf("focus in\n");
+	return EINA_TRUE;
+}
+
+static Eina_Bool _efl_egueb_window_x_event_window_focus_out(void *data,
+		int type, void *event)
+{
+	printf("focus out\n");
+	return EINA_TRUE;
+}
+
+static Eina_Bool _efl_egueb_window_x_event_window_damage(void *data,
+		int type, void *event)
+{
+	printf("damage\n");
+	return EINA_TRUE;
+}
+
+static Eina_Bool _efl_egueb_window_x_event_window_destroy(void *data,
+		int type, void *event)
+{
+	printf("destroy\n");
+	return EINA_TRUE;
+}
+
+static Eina_Bool _efl_egueb_window_x_event_window_configure(void *data,
+		int type, void *event)
+{
+	printf("configure\n");
+	return EINA_TRUE;
+}
+
+static Eina_Bool _efl_egueb_window_x_event_window_delete_request(void *data,
+		int type, void *event)
+{
+	printf("delete request\n");
+	return EINA_TRUE;
+}
+
+static Eina_Bool _efl_egueb_window_x_event_window_show(void *data,
+		int type, void *event)
+{
+	Efl_Egueb_Window_X *thiz = data;
+	Ecore_X_Event_Window_Show *ev = event;
+
+	if (thiz->win != ev->win) return EINA_TRUE;
+	egueb_dom_document_process(thiz->base->doc);
+	/* draw the whole area */
+	egueb_dom_feature_render_draw(thiz->base->render, thiz->s, ENESIM_ROP_FILL, NULL, 0, 0, NULL);
+	/* convert */
+	enesim_converter_surface(thiz->s, thiz->b);
+	/* upload */
+	ecore_x_image_put(thiz->xim, thiz->win, NULL, 0, 0, 0, 0, thiz->w, thiz->h);
+
+	return EINA_TRUE;
+}
+
+static Eina_Bool _efl_egueb_window_x_event_window_hide(void *data,
+		int type, void *event)
+{
+	printf("hide\n");
+	return EINA_TRUE;
+}
+
+static Eina_Bool _efl_egueb_window_x_event_property_change(void *data,
+		int type, void *event)
+{
+	printf("property change\n");
+	return EINA_TRUE;
+}
+
+static Eina_Bool _efl_egueb_window_x_event_visibility_change(void *data,
+		int type, void *event)
+{
+	printf("visibility change\n");
+	return EINA_TRUE;
+}
+
+static Eina_Bool _efl_egueb_window_x_event_client_message(void *data,
+		int type, void *event)
+{
+	return EINA_TRUE;
+}
+
 
 static Ecore_X_Screen * _efl_egueb_window_x_screen_get(Ecore_X_Window w)
 {
@@ -74,164 +208,133 @@ static Ecore_X_Screen * _efl_egueb_window_x_screen_get(Ecore_X_Window w)
 	return screen;
 }
 
+static Eina_Bool _efl_egueb_window_x_visual_to_format(Ecore_X_Visual *v, Enesim_Buffer_Format *f)
+{
+	Ecore_X_Display *display;
+	Visual *visual = v;
+	uint8_t rlen, roffset;
+	uint8_t glen, goffset;
+	uint8_t blen, boffset;
+
+	if (visual->class != TrueColor && visual->class != DirectColor)
+		return EINA_FALSE;
+	_mask_to_offset_and_length(visual->red_mask, &roffset, &rlen);
+	_mask_to_offset_and_length(visual->green_mask, &goffset, &glen);
+	_mask_to_offset_and_length(visual->blue_mask, &boffset, &blen);
+	return enesim_buffer_format_rgb_components_from(f, 0, 0, roffset, rlen,
+			goffset, glen, boffset, blen, EINA_FALSE);
+}
+
 static Eina_Bool _efl_egueb_window_x_buffer_setup(Efl_Egueb_Window_X *thiz)
 {
-	Enesim_Buffer *b;
 	Enesim_Buffer_Format format;
+	Enesim_Buffer_Sw_Data sdata;
+	int bpl;
+	int rows;
+	int bpp;
+	void *data;
 
+	printf("depth %d\n", thiz->depth);
 	/* get the format based on the x attributes */
-	/* create the buffer */
+	if (!_efl_egueb_window_x_visual_to_format(thiz->visual, &format))
+	{
+		printf("no format\n");
+		return EINA_FALSE;
+	}
 	/* create the ximage */
+	thiz->xim = ecore_x_image_new(thiz->w, thiz->h, thiz->visual, thiz->depth);
+	if (!thiz->xim)
+		return EINA_FALSE;
+	data = ecore_x_image_data_get(thiz->xim, &bpl, &rows, &bpp);
+	printf("format %d. (%d %d) %d %d %d\n", format, thiz->w, thiz->h, bpl, rows, bpp);
+	switch (format)
+	{
+		case ENESIM_BUFFER_FORMAT_RGB888:
+		sdata.rgb888.plane0_stride = bpl;
+		sdata.rgb888.plane0 = data;
+		break;
+
+	}
+	/* create the buffer */
+	thiz->b = enesim_buffer_new_data_from(format, thiz->w, thiz->h, EINA_FALSE, &sdata, NULL, NULL);
+	if (!thiz->b)
+	{
+		ecore_x_image_free(thiz->xim);
+		return EINA_FALSE;
+	}
+	thiz->s = enesim_surface_new(ENESIM_FORMAT_ARGB8888, thiz->w, thiz->h);
+
 	return EINA_TRUE;
 }
 
-/*----------------------------------------------------------------------------*
- *                               Event handlers                               *
- *----------------------------------------------------------------------------*/
-static Eina_Bool _efl_egueb_window_x11_event_mouse_in(void *data,
-		int type, void *event)
+static void _efl_egueb_window_x_event_register(Efl_Egueb_Window_X *thiz)
 {
-	printf("mouse in\n");
-	return EINA_TRUE;
+	thiz->handlers[0] = ecore_event_handler_add(ECORE_X_EVENT_MOUSE_IN,
+			_efl_egueb_window_x_event_mouse_in, thiz);
+	thiz->handlers[1] = ecore_event_handler_add(ECORE_X_EVENT_MOUSE_OUT,
+			_efl_egueb_window_x_event_mouse_out, thiz);
+	thiz->handlers[2] = ecore_event_handler_add(ECORE_X_EVENT_WINDOW_FOCUS_IN,
+			_efl_egueb_window_x_event_window_focus_in, thiz);
+	thiz->handlers[3] = ecore_event_handler_add(ECORE_X_EVENT_WINDOW_FOCUS_OUT,
+			_efl_egueb_window_x_event_window_focus_out, thiz);
+	thiz->handlers[4] = ecore_event_handler_add(ECORE_X_EVENT_WINDOW_DAMAGE,
+			_efl_egueb_window_x_event_window_damage, thiz);
+	thiz->handlers[5] = ecore_event_handler_add(ECORE_X_EVENT_WINDOW_DESTROY,
+			_efl_egueb_window_x_event_window_destroy, thiz);
+	thiz->handlers[6] = ecore_event_handler_add(ECORE_X_EVENT_WINDOW_CONFIGURE,
+			_efl_egueb_window_x_event_window_configure, thiz);
+	thiz->handlers[7] = ecore_event_handler_add(ECORE_X_EVENT_WINDOW_DELETE_REQUEST,
+			_efl_egueb_window_x_event_window_delete_request, thiz);
+	thiz->handlers[8] = ecore_event_handler_add(ECORE_X_EVENT_WINDOW_SHOW,
+			_efl_egueb_window_x_event_window_show, thiz);
+	thiz->handlers[9] = ecore_event_handler_add(ECORE_X_EVENT_WINDOW_HIDE,
+			_efl_egueb_window_x_event_window_hide, thiz);
+	thiz->handlers[10] = ecore_event_handler_add(ECORE_X_EVENT_WINDOW_PROPERTY,
+			_efl_egueb_window_x_event_property_change, thiz);
+	thiz->handlers[11] = ecore_event_handler_add(ECORE_X_EVENT_WINDOW_VISIBILITY_CHANGE,
+			_efl_egueb_window_x_event_visibility_change, thiz);
+	thiz->handlers[12] = ecore_event_handler_add(ECORE_X_EVENT_CLIENT_MESSAGE,
+			_efl_egueb_window_x_event_client_message, thiz);
 }
 
-static Eina_Bool _efl_egueb_window_x11_event_mouse_out(void *data,
-		int type, void *event)
+static void _efl_egueb_window_x_event_unregister(Efl_Egueb_Window_X *thiz)
 {
-	printf("mouse out\n");
-	return EINA_TRUE;
+	unsigned int i;
+
+	for (i = 0; i < sizeof(thiz->handlers) / sizeof(Ecore_Event_Handler*); i++)
+	{
+		if (thiz->handlers[i])
+			ecore_event_handler_del(thiz->handlers[i]);
+	}
 }
 
-static Eina_Bool _efl_egueb_window_x11_event_window_focus_in(void *data,
-		int type, void *event)
-{
-	printf("focus in\n");
-	return EINA_TRUE;
-}
-
-static Eina_Bool _efl_egueb_window_x11_event_window_focus_out(void *data,
-		int type, void *event)
-{
-	printf("focus out\n");
-	return EINA_TRUE;
-}
-
-static Eina_Bool _efl_egueb_window_x11_event_window_damage(void *data,
-		int type, void *event)
-{
-	printf("damage\n");
-	return EINA_TRUE;
-}
-
-static Eina_Bool _efl_egueb_window_x11_event_window_destroy(void *data,
-		int type, void *event)
-{
-	printf("destroy\n");
-	return EINA_TRUE;
-}
-
-static Eina_Bool _efl_egueb_window_x11_event_window_configure(void *data,
-		int type, void *event)
-{
-	printf("configure\n");
-	return EINA_TRUE;
-}
-
-static Eina_Bool _efl_egueb_window_x11_event_window_delete_request(void *data,
-		int type, void *event)
-{
-	printf("delete request\n");
-	return EINA_TRUE;
-}
-
-static Eina_Bool _efl_egueb_window_x11_event_window_show(void *data,
-		int type, void *event)
-{
-	printf("show\n");
-	return EINA_TRUE;
-}
-
-static Eina_Bool _efl_egueb_window_x11_event_window_hide(void *data,
-		int type, void *event)
-{
-	printf("hide\n");
-	return EINA_TRUE;
-}
-
-static Eina_Bool _efl_egueb_window_x11_event_property_change(void *data,
-		int type, void *event)
-{
-	printf("property change\n");
-	return EINA_TRUE;
-}
-
-static Eina_Bool _efl_egueb_window_x11_event_visibility_change(void *data,
-		int type, void *event)
-{
-	printf("visibility change\n");
-	return EINA_TRUE;
-}
-
-static Eina_Bool _efl_egueb_window_x11_event_client_message(void *data,
-		int type, void *event)
-{
-	return EINA_TRUE;
-}
-
-static void _efl_egueb_window_x11_init(void)
+static void _efl_egueb_window_x_init(void)
 {
 	_init_count++;
 	if (_init_count > 1) return;
-
-	_handlers[0] = ecore_event_handler_add(ECORE_X_EVENT_MOUSE_IN,
-			_efl_egueb_window_x11_event_mouse_in, NULL);
-	_handlers[1] = ecore_event_handler_add(ECORE_X_EVENT_MOUSE_OUT,
-			_efl_egueb_window_x11_event_mouse_out, NULL);
-	_handlers[2] = ecore_event_handler_add(ECORE_X_EVENT_WINDOW_FOCUS_IN,
-			_efl_egueb_window_x11_event_window_focus_in, NULL);
-	_handlers[3] = ecore_event_handler_add(ECORE_X_EVENT_WINDOW_FOCUS_OUT,
-			_efl_egueb_window_x11_event_window_focus_out, NULL);
-	_handlers[4] = ecore_event_handler_add(ECORE_X_EVENT_WINDOW_DAMAGE,
-			_efl_egueb_window_x11_event_window_damage, NULL);
-	_handlers[5] = ecore_event_handler_add(ECORE_X_EVENT_WINDOW_DESTROY,
-			_efl_egueb_window_x11_event_window_destroy, NULL);
-	_handlers[6] = ecore_event_handler_add(ECORE_X_EVENT_WINDOW_CONFIGURE,
-			_efl_egueb_window_x11_event_window_configure, NULL);
-	_handlers[7] = ecore_event_handler_add(ECORE_X_EVENT_WINDOW_DELETE_REQUEST,
-			_efl_egueb_window_x11_event_window_delete_request, NULL);
-	_handlers[8] = ecore_event_handler_add(ECORE_X_EVENT_WINDOW_SHOW,
-			_efl_egueb_window_x11_event_window_show, NULL);
-	_handlers[9] = ecore_event_handler_add(ECORE_X_EVENT_WINDOW_HIDE,
-			_efl_egueb_window_x11_event_window_hide, NULL);
-	_handlers[10] = ecore_event_handler_add(ECORE_X_EVENT_WINDOW_PROPERTY,
-			_efl_egueb_window_x11_event_property_change, NULL);
-	_handlers[11] = ecore_event_handler_add(ECORE_X_EVENT_WINDOW_VISIBILITY_CHANGE,
-			_efl_egueb_window_x11_event_visibility_change, NULL);
-	_handlers[12] = ecore_event_handler_add(ECORE_X_EVENT_CLIENT_MESSAGE,
-			_efl_egueb_window_x11_event_client_message, NULL);
 }
 
-
-static void _efl_egueb_window_x11_deinit(void)
+static void _efl_egueb_window_x_deinit(void)
 {
 	if (!_init_count) return;
 	if (_init_count == 1)
 	{
-		unsigned int i;
-
-		for (i = 0; i < sizeof(_handlers) / sizeof(Ecore_Event_Handler*); i++)
-		{
-			if (_handlers[i])
-				ecore_event_handler_del(_handlers[i]);
-		}
 	}
 	_init_count--;
 }
 /*----------------------------------------------------------------------------*
  *                        Window descriptor interface                         *
  *----------------------------------------------------------------------------*/
-static Efl_Egueb_Window_Descriptor _descriptor = {
+static void _efl_egueb_window_x_free(void *data)
+{
+	Efl_Egueb_Window_X *thiz = data;
+	_efl_egueb_window_x_event_unregister(thiz);
+	ecore_x_image_free(thiz->xim);
+	enesim_buffer_unref(thiz->b);
+}
 
+static Efl_Egueb_Window_Descriptor _descriptor = {
+	/* .free 	= */ _efl_egueb_window_x_free,
 };
 /*============================================================================*
  *                                 Global                                     *
@@ -244,14 +347,14 @@ EAPI Efl_Egueb_Window * efl_egueb_window_x_new(Egueb_Dom_Node *doc,
 		int w, int h)
 {
 	Efl_Egueb_Window_X *thiz;
+	Efl_Egueb_Window *ret;
 	Ecore_X_Window win;
 	Ecore_X_Screen *screen;
 	Ecore_X_Window_Attributes at;
-	Enesim_Buffer *b;
 	Eina_Bool argb = EINA_FALSE;
 
 	if (!ecore_x_init(display)) return NULL;
-	_efl_egueb_window_x11_init();
+	_efl_egueb_window_x_init();
 
 	if (parent)
 		argb = ecore_x_window_argb_get(parent);
@@ -273,6 +376,8 @@ EAPI Efl_Egueb_Window * efl_egueb_window_x_new(Egueb_Dom_Node *doc,
 	thiz->w = w;
 	thiz->h = h;
 
+	_efl_egueb_window_x_event_register(thiz);
+
 	/* create our own buffer to use for converting the enesim surface
 	 * into something X understands
 	 */
@@ -284,7 +389,10 @@ EAPI Efl_Egueb_Window * efl_egueb_window_x_new(Egueb_Dom_Node *doc,
 	}
 	ecore_x_window_show(win);
 
-	return efl_egueb_window_new(doc, &_descriptor, thiz);
+	ret = efl_egueb_window_new(doc, &_descriptor, thiz);
+	thiz->base = ret;
+
+	return ret;
 }
 
 EAPI Ecore_X_Window efl_egueb_window_x_window_get(Efl_Egueb_Window *w)

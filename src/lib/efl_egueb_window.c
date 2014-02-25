@@ -27,6 +27,13 @@
 /*============================================================================*
  *                                  Local                                     *
  *============================================================================*/
+static Eina_Bool _efl_egueb_window_idle_enterer_cb(void *data)
+{
+	Efl_Egueb_Window *thiz = data;
+
+	egueb_dom_document_process(thiz->doc);
+	return EINA_TRUE;
+}
 /*============================================================================*
  *                                 Global                                     *
  *============================================================================*/
@@ -58,6 +65,9 @@ Efl_Egueb_Window * efl_egueb_window_new(Egueb_Dom_Node *doc,
 	thiz->doc = doc;
 	thiz->render = f;
 
+	/* register our own idler */
+	thiz->idle_enterer = ecore_idle_enterer_add(_efl_egueb_window_idle_enterer_cb, thiz);
+
 	return thiz;
 }
 
@@ -77,10 +87,12 @@ EAPI Efl_Egueb_Window * efl_egueb_window_auto_new(Egueb_Dom_Node *doc,
 
 EAPI void efl_egueb_window_free(Efl_Egueb_Window *thiz)
 {
-	/* TODO call the implementation free */
+	ecore_idle_enterer_del(thiz->idle_enterer);
 	if (thiz->render)
 		egueb_dom_feature_unref(thiz->render);
 	if (thiz->doc)
 		egueb_dom_node_unref(thiz->doc);
+	if (thiz->d->free)
+		thiz->d->free(thiz->data);
 	free(thiz);
 }
