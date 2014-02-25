@@ -136,6 +136,7 @@ static Eina_Bool _efl_egueb_window_x_event_window_show(void *data,
 {
 	Efl_Egueb_Window_X *thiz = data;
 	Ecore_X_Event_Window_Show *ev = event;
+	Ecore_X_GC gc;
 
 	if (thiz->win != ev->win) return EINA_TRUE;
 	egueb_dom_document_process(thiz->base->doc);
@@ -145,7 +146,6 @@ static Eina_Bool _efl_egueb_window_x_event_window_show(void *data,
 	enesim_converter_surface(thiz->s, thiz->b);
 	/* upload */
 	ecore_x_image_put(thiz->xim, thiz->win, NULL, 0, 0, 0, 0, thiz->w, thiz->h);
-
 	return EINA_TRUE;
 }
 
@@ -247,6 +247,8 @@ static Eina_Bool _efl_egueb_window_x_buffer_setup(Efl_Egueb_Window_X *thiz)
 		return EINA_FALSE;
 	data = ecore_x_image_data_get(thiz->xim, &bpl, &rows, &bpp);
 	printf("format %d. (%d %d) %d %d %d\n", format, thiz->w, thiz->h, bpl, rows, bpp);
+	/* FIXME ecore is giving xrgb8888 format, weird ... */
+	format = ENESIM_BUFFER_FORMAT_XRGB8888;
 	switch (format)
 	{
 		case ENESIM_BUFFER_FORMAT_RGB888:
@@ -254,7 +256,18 @@ static Eina_Bool _efl_egueb_window_x_buffer_setup(Efl_Egueb_Window_X *thiz)
 		sdata.rgb888.plane0 = data;
 		break;
 
+		case ENESIM_BUFFER_FORMAT_BGR888:
+		sdata.bgr888.plane0_stride = bpl;
+		sdata.bgr888.plane0 = data;
+
+		case ENESIM_BUFFER_FORMAT_XRGB8888:
+		sdata.xrgb8888.plane0_stride = bpl;
+		sdata.xrgb8888.plane0 = data;
+		default:
+		break;
+
 	}
+	
 	/* create the buffer */
 	thiz->b = enesim_buffer_new_data_from(format, thiz->w, thiz->h, EINA_FALSE, &sdata, NULL, NULL);
 	if (!thiz->b)
@@ -363,6 +376,8 @@ EAPI Efl_Egueb_Window * efl_egueb_window_x_new(Egueb_Dom_Node *doc,
 		w = ecore_x_window_argb_new(parent, x, y, w, h);
 
 	win = ecore_x_window_new(parent, x, y, w, h);
+	ecore_x_window_defaults_set(win);
+
 	screen = _efl_egueb_window_x_screen_get(parent);
 	ecore_x_window_attributes_get(win, &at);
 
