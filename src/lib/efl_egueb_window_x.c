@@ -208,7 +208,8 @@ static Ecore_X_Screen * _efl_egueb_window_x_screen_get(Ecore_X_Window w)
 	return screen;
 }
 
-static Eina_Bool _efl_egueb_window_x_visual_to_format(Ecore_X_Visual *v, Enesim_Buffer_Format *f)
+static Eina_Bool _efl_egueb_window_x_visual_to_format(Ecore_X_Visual *v,
+		int depth, Enesim_Buffer_Format *f)
 {
 	Ecore_X_Display *display;
 	Visual *visual = v;
@@ -221,7 +222,7 @@ static Eina_Bool _efl_egueb_window_x_visual_to_format(Ecore_X_Visual *v, Enesim_
 	_mask_to_offset_and_length(visual->red_mask, &roffset, &rlen);
 	_mask_to_offset_and_length(visual->green_mask, &goffset, &glen);
 	_mask_to_offset_and_length(visual->blue_mask, &boffset, &blen);
-	return enesim_buffer_format_rgb_components_from(f, 0, 0, roffset, rlen,
+	return enesim_buffer_format_rgb_components_from(f, depth, 0, 0, roffset, rlen,
 			goffset, glen, boffset, blen, EINA_FALSE);
 }
 
@@ -234,9 +235,8 @@ static Eina_Bool _efl_egueb_window_x_buffer_setup(Efl_Egueb_Window_X *thiz)
 	int bpp;
 	void *data;
 
-	printf("depth %d\n", thiz->depth);
 	/* get the format based on the x attributes */
-	if (!_efl_egueb_window_x_visual_to_format(thiz->visual, &format))
+	if (!_efl_egueb_window_x_visual_to_format(thiz->visual, thiz->depth, &format))
 	{
 		printf("no format\n");
 		return EINA_FALSE;
