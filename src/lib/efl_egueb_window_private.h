@@ -15,11 +15,24 @@
  * License along with this library.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef _EFL_SVG_WINDOW_H_
-#define _EFL_SVG_WINDOW_H_
+#ifndef _EFL_EGUEB_WINDOW_PRIVATE_H_
+#define _EFL_EGUEB_WINDOW_PRIVATE_H_
 
-typedef struct _Efl_Svg_Window Efl_Svg_Window;
+typedef struct _Efl_Egueb_Window_Descriptor
+{
+	
+} Efl_Egueb_Window_Descriptor;
 
-EAPI Efl_Svg_Window * efl_svg_window_auto_new(int x, int y, int w, int h);
 
-#endif /*_EFL_SVG_WINDOW_H*/
+struct _Efl_Egueb_Window
+{
+	Egueb_Dom_Node *doc;
+	Egueb_Dom_Feature *render;
+	void *data;
+	const Efl_Egueb_Window_Descriptor *d;
+};
+
+Efl_Egueb_Window * efl_egueb_window_new(Egueb_Dom_Node *doc,
+		const Efl_Egueb_Window_Descriptor *d, void *data);
+
+#endif

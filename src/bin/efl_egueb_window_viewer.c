@@ -1,14 +1,16 @@
 #include <stdio.h>
 #include <getopt.h>
 
+#include <Egueb_Svg.h>
+
 #include "Efl_Svg.h"
 
-typedef struct _Efl_Svg_Window_Viewer
+typedef struct _Efl_Egueb_Window_Viewer
 {
 	const char *file;
 	int width;
 	int height;
-} Efl_Svg_Window_Viewer;
+} Efl_Egueb_Window_Viewer;
 
 static void help(const char *name)
 {
@@ -23,8 +25,10 @@ static void help(const char *name)
 
 int main(int argc, char *argv[])
 {
-	Efl_Svg_Window_Viewer thiz;
-	Efl_Svg_Window *w;
+	Efl_Egueb_Window_Viewer thiz;
+	Efl_Egueb_Window *w;
+	Egueb_Dom_Node *doc;
+	Enesim_Stream *s;
 	char *short_options = "hw:e:";
 	struct option long_options[] = {
 		{ "help", 1, 0, 'h' },
@@ -83,12 +87,26 @@ int main(int argc, char *argv[])
 		help(argv[0]);
 		return 0;
 	}
+	s = enesim_stream_file_new(filename, "rb");
+	if (!s)
+	{
+		printf("Failed to read file %s\n", filename);
+		help(argv[0]);
+		return 0;
+	}
+	/* FIXME for now we do like this to create a new doc, later
+	 * we need to create a doc based on the mime type, using the
+	 * dom implementation
+	 */
+	doc = egueb_svg_document_new(NULL);
+	egueb_dom_parser_parse(s, doc);
+	enesim_stream_unref(s);
 
 	thiz.file = filename;
 	thiz.width = width;
 	thiz.height = height;
 
-	w = efl_svg_window_auto_new(0, 0, width, height);
+	w = efl_egueb_window_auto_new(doc, 0, 0, width, height);
 	if (!w)
 		goto shutdown_egueb_svg;
 

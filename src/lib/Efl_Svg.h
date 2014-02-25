@@ -26,6 +26,6 @@
 
 #include "efl_svg_main.h"
 #include "efl_svg_smart.h"
-#include "efl_svg_window.h"
+#include "efl_egueb_window.h"
 
 #endif /* _EFL_SVG_SMART_H_ */
