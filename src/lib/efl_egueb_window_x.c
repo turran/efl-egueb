@@ -263,9 +263,10 @@ static Eina_Bool _efl_egueb_window_x_buffer_setup(Efl_Egueb_Window_X *thiz)
 		case ENESIM_BUFFER_FORMAT_XRGB8888:
 		sdata.xrgb8888.plane0_stride = bpl;
 		sdata.xrgb8888.plane0 = data;
-		default:
 		break;
 
+		default:
+		break;
 	}
 	
 	/* create the buffer */

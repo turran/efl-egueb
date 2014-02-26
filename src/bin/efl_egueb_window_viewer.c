@@ -98,8 +98,8 @@ int main(int argc, char *argv[])
 	 * we need to create a doc based on the mime type, using the
 	 * dom implementation
 	 */
-	doc = egueb_svg_document_new(NULL);
-	egueb_dom_parser_parse(s, doc);
+	doc = egueb_svg_document_new();
+	egueb_dom_parser_parse(s, &doc);
 	enesim_stream_unref(s);
 
 	thiz.file = filename;

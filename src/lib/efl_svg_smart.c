@@ -617,7 +617,7 @@ static void _efl_svg_smart_add(Evas_Object *obj)
 	evas_render_method_list_free(engines);
 
 	/* create the document */
-	thiz->doc = egueb_svg_document_new(NULL);
+	thiz->doc = egueb_svg_document_new();
 	/* set the different application callbacks */
 	egueb_svg_document_filename_get_cb_set(thiz->doc, _efl_svg_smart_filename_get, thiz);
 }
@@ -789,7 +789,7 @@ EAPI void efl_svg_smart_file_set(Evas_Object *o, const char *file)
 	{
 		return;
 	}
-	egueb_dom_parser_parse(im, thiz->doc);
+	egueb_dom_parser_parse(im, &thiz->doc);
 	enesim_stream_unref(im);
 	thiz->file = strdup(file);
 	strncpy(base_dir, thiz->file, PATH_MAX);
