@@ -329,12 +329,10 @@ static void _efl_egueb_window_x_event_unregister(Efl_Egueb_Window_X *thiz)
 /*----------------------------------------------------------------------------*
  *                        Window descriptor interface                         *
  *----------------------------------------------------------------------------*/
-static void _efl_egueb_window_x_free(void *data)
+static Ecore_Window _efl_egueb_window_x_window_get(void *data)
 {
 	Efl_Egueb_Window_X *thiz = data;
-
-	_efl_egueb_window_x_event_unregister(thiz);
-	ecore_x_image_free(thiz->xim);
+	return (Ecore_Window)thiz->win;
 }
 
 static void _efl_egueb_window_x_output_update(void *data, Eina_Rectangle *area)
@@ -344,7 +342,16 @@ static void _efl_egueb_window_x_output_update(void *data, Eina_Rectangle *area)
 	_update_area(thiz, area);
 }
 
+static void _efl_egueb_window_x_free(void *data)
+{
+	Efl_Egueb_Window_X *thiz = data;
+
+	_efl_egueb_window_x_event_unregister(thiz);
+	ecore_x_image_free(thiz->xim);
+}
+
 static Efl_Egueb_Window_Descriptor _descriptor = {
+	/* .window_get  	= */ _efl_egueb_window_x_window_get,
 	/* .output_update 	= */ _efl_egueb_window_x_output_update,
 	/* .free 		= */ _efl_egueb_window_x_free,
 };

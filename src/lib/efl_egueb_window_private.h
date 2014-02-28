@@ -21,11 +21,13 @@
 #include <Ecore_Input.h>
 
 typedef void (*Efl_Egueb_Window_Descriptor_Free)(void *data);
-typedef void (*Efl_Egueb_Window_Output_Update)(void *data, Eina_Rectangle *area);
+typedef void (*Efl_Egueb_Window_Descriptor_Output_Update)(void *data, Eina_Rectangle *area);
+typedef Ecore_Window (*Efl_Egueb_Window_Descriptor_Window_Get)(void *data);
 
 typedef struct _Efl_Egueb_Window_Descriptor
 {
-	Efl_Egueb_Window_Output_Update output_update;
+	Efl_Egueb_Window_Descriptor_Window_Get window_get;
+	Efl_Egueb_Window_Descriptor_Output_Update output_update;
 	Efl_Egueb_Window_Descriptor_Free free;
 } Efl_Egueb_Window_Descriptor;
 

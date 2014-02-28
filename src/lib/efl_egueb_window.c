@@ -27,6 +27,14 @@
 /*============================================================================*
  *                                  Local                                     *
  *============================================================================*/
+static inline Eina_Bool _check_window(Efl_Egueb_Window *thiz, Ecore_Window w)
+{
+	Ecore_Window real;
+
+	real = thiz->d->window_get(thiz->data);
+	if (real == w) return EINA_TRUE;
+	else return EINA_FALSE;
+}
 /*----------------------------------------------------------------------------*
  *                               Event handlers                               *
  *----------------------------------------------------------------------------*/
@@ -70,6 +78,10 @@ static Eina_Bool _efl_egueb_window_mouse_move(void *data,
 		int type, void *event)
 {
 	Efl_Egueb_Window *thiz = data;
+	Ecore_Event_Mouse_Move *ev = event;
+
+	if (!_check_window(thiz, ev->window))
+		return EINA_TRUE;
 
 	printf("mouse move\n");
 	return EINA_TRUE;
