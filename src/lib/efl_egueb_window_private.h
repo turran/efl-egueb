@@ -18,6 +18,8 @@
 #ifndef _EFL_EGUEB_WINDOW_PRIVATE_H_
 #define _EFL_EGUEB_WINDOW_PRIVATE_H_
 
+#include <Ecore_Input.h>
+
 typedef void (*Efl_Egueb_Window_Descriptor_Free)(void *data);
 typedef void (*Efl_Egueb_Window_Output_Update)(void *data, Eina_Rectangle *area);
 
@@ -44,6 +46,8 @@ struct _Efl_Egueb_Window
 	Ecore_Idle_Enterer *idle_enterer;
 	Ecore_Timer *animator;
 	Eina_List *damages;
+	/* the event handlers */
+	Ecore_Event_Handler *handlers[8];
 
 	void *data;
 	const Efl_Egueb_Window_Descriptor *d;

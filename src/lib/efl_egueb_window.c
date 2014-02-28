@@ -27,6 +27,81 @@
 /*============================================================================*
  *                                  Local                                     *
  *============================================================================*/
+/*----------------------------------------------------------------------------*
+ *                               Event handlers                               *
+ *----------------------------------------------------------------------------*/
+static Eina_Bool _efl_egueb_window_key_down(void *data,
+		int type, void *event)
+{
+	Efl_Egueb_Window *thiz = data;
+
+	printf("key down\n");
+	return EINA_TRUE;
+}
+
+static Eina_Bool _efl_egueb_window_key_up(void *data,
+		int type, void *event)
+{
+	Efl_Egueb_Window *thiz = data;
+
+	printf("key up\n");
+	return EINA_TRUE;
+}
+
+static Eina_Bool _efl_egueb_window_mouse_button_down(void *data,
+		int type, void *event)
+{
+	Efl_Egueb_Window *thiz = data;
+
+	printf("mouse button down\n");
+	return EINA_TRUE;
+}
+
+static Eina_Bool _efl_egueb_window_mouse_button_up(void *data,
+		int type, void *event)
+{
+	Efl_Egueb_Window *thiz = data;
+
+	printf("mouse button up\n");
+	return EINA_TRUE;
+}
+
+static Eina_Bool _efl_egueb_window_mouse_move(void *data,
+		int type, void *event)
+{
+	Efl_Egueb_Window *thiz = data;
+
+	printf("mouse move\n");
+	return EINA_TRUE;
+}
+
+static Eina_Bool _efl_egueb_window_mouse_wheel(void *data,
+		int type, void *event)
+{
+	Efl_Egueb_Window *thiz = data;
+
+	printf("mouse wheel\n");
+	return EINA_TRUE;
+}
+
+static Eina_Bool _efl_egueb_window_mouse_in(void *data,
+		int type, void *event)
+{
+	Efl_Egueb_Window *thiz = data;
+
+	printf("mouse in\n");
+	return EINA_TRUE;
+}
+
+static Eina_Bool _efl_egueb_window_mouse_out(void *data,
+		int type, void *event)
+{
+	Efl_Egueb_Window *thiz = data;
+
+	printf("mouse out\n");
+	return EINA_TRUE;
+}
+
 static Eina_Bool _efl_egueb_window_damages(Egueb_Dom_Feature *e EINA_UNUSED,
 		Eina_Rectangle *area, void *data)
 {
@@ -167,6 +242,23 @@ Efl_Egueb_Window * efl_egueb_window_new(Egueb_Dom_Node *doc,
 			thiz->animator = ecore_timer_add(1.0/fps, _efl_egueb_window_timer_cb, thiz);
 		//ecore_timer_interval_set(thiz->animator, 1.0/thiz->fps);
 	}
+	/* register the event handlers */
+	thiz->handlers[0] = ecore_event_handler_add(ECORE_EVENT_KEY_DOWN,
+			_efl_egueb_window_key_down, thiz);
+	thiz->handlers[1] = ecore_event_handler_add(ECORE_EVENT_KEY_UP,
+			_efl_egueb_window_key_up, thiz);
+	thiz->handlers[2] = ecore_event_handler_add(ECORE_EVENT_MOUSE_BUTTON_DOWN,
+			_efl_egueb_window_mouse_button_down, thiz);
+	thiz->handlers[3] = ecore_event_handler_add(ECORE_EVENT_MOUSE_BUTTON_UP,
+			_efl_egueb_window_mouse_button_up, thiz);
+	thiz->handlers[4] = ecore_event_handler_add(ECORE_EVENT_MOUSE_MOVE,
+			_efl_egueb_window_mouse_move, thiz);
+	thiz->handlers[5] = ecore_event_handler_add(ECORE_EVENT_MOUSE_WHEEL,
+			_efl_egueb_window_mouse_wheel, thiz);
+	thiz->handlers[6] = ecore_event_handler_add(ECORE_EVENT_MOUSE_IN,
+			_efl_egueb_window_mouse_in, thiz);
+	thiz->handlers[7] = ecore_event_handler_add(ECORE_EVENT_MOUSE_OUT,
+			_efl_egueb_window_mouse_out, thiz);
 
 	return thiz;
 }
