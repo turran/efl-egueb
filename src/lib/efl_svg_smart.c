@@ -65,6 +65,7 @@ typedef struct _Efl_Svg_Smart
 	Egueb_Dom_Feature *render;
 	Egueb_Dom_Feature *window;
 	Egueb_Dom_Feature *animation;
+	Egueb_Dom_Feature *ui;
 
 	Ecore_Idle_Enterer *idler;
 	Ecore_Timer *animator;
@@ -202,7 +203,9 @@ static void _efl_svg_smart_mouse_up(void *data, Evas *e EINA_UNUSED, Evas_Object
 {
 	Efl_Svg_Smart *thiz = (Efl_Svg_Smart *)data;
 /* 	Evas_Event_Mouse_Up *ev = event_info; */
-	egueb_svg_document_feed_mouse_up(thiz->doc, 0);
+
+	if (thiz->ui)
+		egueb_dom_feature_ui_feed_mouse_up(thiz->ui, 0);
 	thiz->down = EINA_FALSE;
 	{
 		Egueb_Dom_Node *svg;
@@ -219,7 +222,8 @@ static void _efl_svg_smart_mouse_down(void *data, Evas *e EINA_UNUSED, Evas_Obje
  	Evas_Event_Mouse_Down *ev = event_info;
 	Evas_Coord ix, iy;
 
-	egueb_svg_document_feed_mouse_down(thiz->doc, 0);
+	if (thiz->ui)
+		egueb_dom_feature_ui_feed_mouse_down(thiz->ui, 0);
 
 	thiz->down = EINA_TRUE;
 	evas_object_geometry_get(thiz->img, &ix, &iy, NULL, NULL);
@@ -260,7 +264,8 @@ static void _efl_svg_smart_mouse_move(void *data, Evas *e EINA_UNUSED, Evas_Obje
 	evas_object_geometry_get(thiz->img, &ix, &iy, NULL, NULL);
 	svgx = ev->cur.canvas.x - ix;
 	svgy = ev->cur.canvas.y - iy;
-	egueb_svg_document_feed_mouse_move(thiz->doc, svgx, svgy);
+	if (thiz->ui)
+		egueb_dom_feature_ui_feed_mouse_move(thiz->ui, svgx, svgy);
 }
 
 static void _efl_svg_smart_reconfigure(Efl_Svg_Smart *thiz)
@@ -452,7 +457,8 @@ static Eina_Bool _efl_svg_smart_idler_cb(void *data)
 		/* feed a mouse move event to inform our current cursor position */
 		evas_object_geometry_get(thiz->img, &ix, &iy, NULL, NULL);
 		evas_pointer_canvas_xy_get(thiz->evas, &x, &y);
-		egueb_svg_document_feed_mouse_move(svg, x - ix, y - iy);
+		if (thiz->ui)
+			egueb_dom_feature_ui_feed_mouse_move(thiz->ui, x - ix, y - iy);
 	}
 
 	/* check if the size has changed, if so, create a new surface */
@@ -796,6 +802,12 @@ EAPI void efl_svg_smart_file_set(Evas_Object *o, const char *file)
 		thiz->animation = NULL;
 	}
 
+	if (thiz->ui)
+	{
+		egueb_dom_feature_unref(thiz->ui);
+		thiz->animation = NULL;
+	}
+
 	if (thiz->doc)
 	{
 		egueb_dom_node_unref(thiz->doc);
@@ -847,6 +859,9 @@ EAPI void efl_svg_smart_file_set(Evas_Object *o, const char *file)
 		thiz->doc = NULL;
 		return;
 	}
+
+	thiz->ui = egueb_dom_node_feature_get(thiz->doc,
+			EGUEB_DOM_FEATURE_UI_NAME, NULL);
 
 	thiz->file = strdup(file);
 	strncpy(base_dir, thiz->file, PATH_MAX);
