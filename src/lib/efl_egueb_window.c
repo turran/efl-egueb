@@ -31,7 +31,8 @@ static Eina_Bool _efl_egueb_window_idle_enterer_cb(void *data)
 {
 	Efl_Egueb_Window *thiz = data;
 
-	egueb_dom_document_process(thiz->doc);
+	/* PROCESS and be sure to draw */
+	//egueb_dom_document_process(thiz->doc);
 	return EINA_TRUE;
 }
 /*============================================================================*
@@ -41,7 +42,8 @@ Efl_Egueb_Window * efl_egueb_window_new(Egueb_Dom_Node *doc,
 		const Efl_Egueb_Window_Descriptor *d, void *data)
 {
 	Efl_Egueb_Window *thiz;
-	Egueb_Dom_Feature *f;
+	Egueb_Dom_Feature *render;
+	Egueb_Dom_Feature *window;
 
 	if (!doc) return NULL;
 
@@ -52,18 +54,26 @@ Efl_Egueb_Window * efl_egueb_window_new(Egueb_Dom_Node *doc,
 		return NULL;
 	}
 	/* check it it has the render feature */
-	f = egueb_dom_node_feature_get(doc, EGUEB_DOM_FEATURE_RENDER_NAME, NULL);
-	if (!f)
+	render = egueb_dom_node_feature_get(doc, EGUEB_DOM_FEATURE_RENDER_NAME, NULL);
+	if (!render)
 	{
 		egueb_dom_node_unref(doc);
 		return NULL;
 	}
 
+	window = egueb_dom_node_feature_get(doc, EGUEB_DOM_FEATURE_WINDOW_NAME, NULL);
+	if (!window)
+	{
+		egueb_dom_feature_unref(render);
+		egueb_dom_node_unref(doc);
+		return NULL;
+	}
 	thiz = calloc(1, sizeof(Efl_Egueb_Window));
 	thiz->d = d;
 	thiz->data = data;
 	thiz->doc = doc;
-	thiz->render = f;
+	thiz->render = render;
+	thiz->window = window;
 
 	/* register our own idler */
 	thiz->idle_enterer = ecore_idle_enterer_add(_efl_egueb_window_idle_enterer_cb, thiz);
@@ -88,6 +98,8 @@ EAPI Efl_Egueb_Window * efl_egueb_window_auto_new(Egueb_Dom_Node *doc,
 EAPI void efl_egueb_window_free(Efl_Egueb_Window *thiz)
 {
 	ecore_idle_enterer_del(thiz->idle_enterer);
+	if (thiz->window)
+		egueb_dom_feature_unref(thiz->window);
 	if (thiz->render)
 		egueb_dom_feature_unref(thiz->render);
 	if (thiz->doc)

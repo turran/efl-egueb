@@ -60,9 +60,14 @@ typedef struct _Efl_Svg_Smart
 	Evas_Object *bkg;
 	Evas_Object *img;
 	Evas_Object *img_clip;
+
 	Egueb_Dom_Node *doc;
+	Egueb_Dom_Feature *render;
+	Egueb_Dom_Feature *window;
+
 	Ecore_Idle_Enterer *idler;
 	Ecore_Timer *animator;
+
 	Enesim_Backend backend;
 	Enesim_Surface *s;
 
@@ -132,7 +137,7 @@ static inline double _efl_svg_smart_timestamp_get(void)
 	return t;
 }
 
-static Eina_Bool _efl_svg_smart_damages(Egueb_Dom_Node *e EINA_UNUSED, Eina_Rectangle *area, void *data)
+static Eina_Bool _efl_svg_smart_damages(Egueb_Dom_Feature *e EINA_UNUSED, Eina_Rectangle *area, void *data)
 {
 	Efl_Svg_Smart *thiz = data;
 	Eina_Rectangle *r;
@@ -280,9 +285,8 @@ static void _efl_svg_smart_reconfigure(Efl_Svg_Smart *thiz)
 	evas_object_move(thiz->img_clip, x, y);
 	evas_object_resize(thiz->img_clip, w, h);
 
-	/* resize the document */
-	egueb_svg_document_width_set(thiz->doc, w);
-	egueb_svg_document_height_set(thiz->doc, h);
+	/* resize the document content */
+	egueb_dom_feature_window_content_size_set(thiz->window, w, h);
 
 	/* center the image */
 	evas_object_image_size_get(thiz->img, &iw, &ih);
@@ -368,15 +372,10 @@ static Eina_Bool _efl_svg_smart_surface_reconfigure(Efl_Svg_Smart *thiz)
 {
 	Evas_Coord iw, ih;
 	Evas_Coord w, h;
-	double aw;
-	double ah;
 
-	egueb_svg_document_actual_width_get(thiz->doc, &aw);
-	egueb_svg_document_actual_height_get(thiz->doc, &ah);
+	egueb_dom_feature_window_content_size_get(thiz->window, &w, &h);
 	evas_object_image_size_get(thiz->img, &iw, &ih);
 
-	w = ceil(aw);
-	h = ceil(ah);
 	if ((iw != w) || (ih != h))
 	{
 		evas_object_resize(thiz->img, w, h);
@@ -463,16 +462,17 @@ static Eina_Bool _efl_svg_smart_idler_cb(void *data)
 	/* check if the size has changed, if so, create a new surface */
 	_efl_svg_smart_surface_reconfigure(thiz);
 
-	/* get the damages */
-	_efl_svg_smart_damage_clear(thiz);
-	egueb_svg_document_damages_get(thiz->doc, _efl_svg_smart_damages, thiz);
-	if (!thiz->damage_rectangles) goto done;
-
 	/* FIXME from the docs, looks like if i put true on the second argument, the whole data
 	 * will be invalidated, but then, it says that i should call update_add ... weird
 	 */
 	if (!thiz->s)
 		goto no_surface;
+
+	/* get the damages */
+	_efl_svg_smart_damage_clear(thiz);
+	egueb_dom_feature_render_damages_get(thiz->render, thiz->s, _efl_svg_smart_damages, thiz);
+	if (!thiz->damage_rectangles) goto done;
+
 #if HAVE_GL
 	if (thiz->backend == ENESIM_BACKEND_OPENGL)
 	{
@@ -782,6 +782,24 @@ EAPI void efl_svg_smart_file_set(Evas_Object *o, const char *file)
 		thiz->base_dir = NULL;
 	}
 
+	if (thiz->render)
+	{
+		egueb_dom_feature_unref(thiz->render);
+		thiz->render = NULL;
+	}
+
+	if (thiz->window)
+	{
+		egueb_dom_feature_unref(thiz->window);
+		thiz->window = NULL;
+	}
+
+	if (thiz->doc)
+	{
+		egueb_dom_node_unref(thiz->doc);
+		thiz->doc = NULL;
+	}
+
 	if (!file) return;
 
 	im = enesim_stream_file_new(file, "r+");
@@ -791,6 +809,25 @@ EAPI void efl_svg_smart_file_set(Evas_Object *o, const char *file)
 	}
 	egueb_dom_parser_parse(im, &thiz->doc);
 	enesim_stream_unref(im);
+
+	/* get the features */
+	thiz->render = egueb_dom_node_feature_get(thiz->doc,
+			EGUEB_DOM_FEATURE_RENDER_NAME, NULL);
+	if (!thiz->render)
+	{
+		egueb_dom_node_unref(thiz->doc);
+		thiz->doc = NULL;
+		return;
+	}
+	thiz->window = egueb_dom_node_feature_get(thiz->doc,
+			EGUEB_DOM_FEATURE_WINDOW_NAME, NULL);
+	{
+		egueb_dom_feature_unref(thiz->render);
+		egueb_dom_node_unref(thiz->doc);
+		thiz->doc = NULL;
+		return;
+	}
+
 	thiz->file = strdup(file);
 	strncpy(base_dir, thiz->file, PATH_MAX);
 	tmp = dirname(base_dir);

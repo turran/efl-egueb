@@ -30,6 +30,7 @@ struct _Efl_Egueb_Window
 {
 	Egueb_Dom_Node *doc;
 	Egueb_Dom_Feature *render;
+	Egueb_Dom_Feature *window;
 	Ecore_Idle_Enterer *idle_enterer;
 	void *data;
 	const Efl_Egueb_Window_Descriptor *d;

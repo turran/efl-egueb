@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
 {
 	Efl_Egueb_Window_Viewer thiz;
 	Efl_Egueb_Window *w;
-	Egueb_Dom_Node *doc;
+	Egueb_Dom_Node *doc = NULL;
 	Enesim_Stream *s;
 	char *short_options = "hw:e:";
 	struct option long_options[] = {
@@ -98,7 +98,6 @@ int main(int argc, char *argv[])
 	 * we need to create a doc based on the mime type, using the
 	 * dom implementation
 	 */
-	doc = egueb_svg_document_new();
 	egueb_dom_parser_parse(s, &doc);
 	enesim_stream_unref(s);
 
