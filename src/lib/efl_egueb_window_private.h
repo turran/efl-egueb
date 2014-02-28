@@ -19,24 +19,38 @@
 #define _EFL_EGUEB_WINDOW_PRIVATE_H_
 
 typedef void (*Efl_Egueb_Window_Descriptor_Free)(void *data);
+typedef void (*Efl_Egueb_Window_Output_Update)(void *data, Eina_Rectangle *area);
 
 typedef struct _Efl_Egueb_Window_Descriptor
 {
+	Efl_Egueb_Window_Output_Update output_update;
 	Efl_Egueb_Window_Descriptor_Free free;
 } Efl_Egueb_Window_Descriptor;
-
 
 struct _Efl_Egueb_Window
 {
 	Egueb_Dom_Node *doc;
 	Egueb_Dom_Feature *render;
 	Egueb_Dom_Feature *window;
+	Egueb_Dom_Feature *animation;
+	int x;
+	int y;
+	int w;
+	int h;
+	/* data the backend should set */
+	Enesim_Surface *s;
+	Enesim_Buffer *b;
+	/* private */
 	Ecore_Idle_Enterer *idle_enterer;
+	Ecore_Timer *animator;
+	Eina_List *damages;
+
 	void *data;
 	const Efl_Egueb_Window_Descriptor *d;
 };
 
 Efl_Egueb_Window * efl_egueb_window_new(Egueb_Dom_Node *doc,
+		int x, int y, int w, int h,
 		const Efl_Egueb_Window_Descriptor *d, void *data);
 
 #endif

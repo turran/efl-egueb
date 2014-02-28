@@ -64,6 +64,7 @@ typedef struct _Efl_Svg_Smart
 	Egueb_Dom_Node *doc;
 	Egueb_Dom_Feature *render;
 	Egueb_Dom_Feature *window;
+	Egueb_Dom_Feature *animation;
 
 	Ecore_Idle_Enterer *idler;
 	Ecore_Timer *animator;
@@ -191,14 +192,9 @@ static void _efl_svg_smart_damage_clear(Efl_Svg_Smart *thiz)
 static Eina_Bool _efl_svg_smart_animator_cb(void *data)
 {
 	Efl_Svg_Smart *thiz = data;
-	Egueb_Dom_Node *svg = NULL;;
 
-	svg = egueb_dom_document_element_get(thiz->doc);
-	if (!svg) goto done;
-
-	egueb_svg_element_svg_time_tick(svg);
-	egueb_dom_node_unref(svg);
-done:
+	if (thiz->animation)
+		egueb_dom_feature_animation_tick(thiz->animation);
 	return EINA_TRUE;
 }
 
@@ -482,7 +478,7 @@ static Eina_Bool _efl_svg_smart_idler_cb(void *data)
 
 	draw_start = _efl_svg_smart_timestamp_get();
 	/* we use the fill variant given that we need to overwrite what is in the image */
-	ret = egueb_svg_element_svg_draw_list(svg, thiz->s, ENESIM_ROP_FILL, thiz->damage_rectangles, 0, 0, &error);
+	ret = egueb_dom_feature_render_draw_list(thiz->render, thiz->s, ENESIM_ROP_FILL, thiz->damage_rectangles, 0, 0, &error);
 	draw_end = _efl_svg_smart_timestamp_get();
 	if (!ret)
 	{
@@ -794,6 +790,12 @@ EAPI void efl_svg_smart_file_set(Evas_Object *o, const char *file)
 		thiz->window = NULL;
 	}
 
+	if (thiz->animation)
+	{
+		egueb_dom_feature_unref(thiz->animation);
+		thiz->animation = NULL;
+	}
+
 	if (thiz->doc)
 	{
 		egueb_dom_node_unref(thiz->doc);
@@ -821,8 +823,26 @@ EAPI void efl_svg_smart_file_set(Evas_Object *o, const char *file)
 	}
 	thiz->window = egueb_dom_node_feature_get(thiz->doc,
 			EGUEB_DOM_FEATURE_WINDOW_NAME, NULL);
+	if (!thiz->window)
 	{
 		egueb_dom_feature_unref(thiz->render);
+		thiz->render = NULL;
+
+		egueb_dom_node_unref(thiz->doc);
+		thiz->doc = NULL;
+		return;
+	}
+
+	thiz->animation = egueb_dom_node_feature_get(thiz->doc,
+			EGUEB_DOM_FEATURE_ANIMATION_NAME, NULL);
+	if (!thiz->animation)
+	{
+		egueb_dom_feature_unref(thiz->animation);
+		thiz->animation = NULL;
+
+		egueb_dom_feature_unref(thiz->render);
+		thiz->render = NULL;
+
 		egueb_dom_node_unref(thiz->doc);
 		thiz->doc = NULL;
 		return;
@@ -859,18 +879,16 @@ EAPI void efl_svg_smart_debug_damage_set(Evas_Object *o, Eina_Bool debug)
 EAPI void efl_svg_smart_fps_set(Evas_Object *o, int fps)
 {
 	Efl_Svg_Smart *thiz;
-	Egueb_Dom_Node *svg = NULL;
 
 	if (fps < 0) return;
 	thiz = evas_object_smart_data_get(o);
 	/* remove the animtor and add another one with the correct fps */
 	thiz->fps = fps;
-	ecore_timer_interval_set(thiz->animator, 1.0/thiz->fps);
-	svg = egueb_dom_document_element_get(thiz->doc);
-	if (svg)
+
+	if (thiz->animation)
 	{
-		egueb_svg_element_svg_animations_fps_set(svg, thiz->fps);
-		egueb_dom_node_unref(svg);
+		egueb_dom_feature_animation_fps_set(thiz->animation, thiz->fps);
+		ecore_timer_interval_set(thiz->animator, 1.0/thiz->fps);
 	}
 }
 

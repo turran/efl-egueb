@@ -39,21 +39,14 @@ typedef struct _Efl_Egueb_Window_X
 	Ecore_X_Image *xim;
 	/* the event handlers */
 	Ecore_Event_Handler *handlers[13];
-	Enesim_Buffer *b;
-	Enesim_Surface *s;
 	Eina_Bool argb;
 	int depth;
-	int w;
-	int h;
 } Efl_Egueb_Window_X;
-
-static int _init_count = 0;
 
 static inline void _mask_to_offset_and_length(int value, uint8_t *offset, uint8_t *len)
 {
 	*len = 0;
 	*offset = 0;
-	printf("%08x\n", value);
 	while (value)
 	{
 		if (value & 1)
@@ -72,6 +65,11 @@ static inline void _mask_to_offset_and_length(int value, uint8_t *offset, uint8_
 	}
 }
 
+static void _update_area(Efl_Egueb_Window_X *thiz, Eina_Rectangle *area)
+{
+	/* upload */
+	ecore_x_image_put(thiz->xim, thiz->win, NULL, 0, 0, area->x, area->y, area->w, area->h);
+}
 /*----------------------------------------------------------------------------*
  *                               Event handlers                               *
  *----------------------------------------------------------------------------*/
@@ -106,7 +104,14 @@ static Eina_Bool _efl_egueb_window_x_event_window_focus_out(void *data,
 static Eina_Bool _efl_egueb_window_x_event_window_damage(void *data,
 		int type, void *event)
 {
-	printf("damage\n");
+	Efl_Egueb_Window_X *thiz = data;
+	Ecore_X_Event_Window_Damage *ev = event;
+	Eina_Rectangle area;
+
+	if (thiz->win != ev->win) return EINA_TRUE;
+	eina_rectangle_coords_from(&area, ev->x, ev->y, ev->w, ev->h);
+	_update_area(thiz, &area);
+
 	return EINA_TRUE;
 }
 
@@ -120,7 +125,12 @@ static Eina_Bool _efl_egueb_window_x_event_window_destroy(void *data,
 static Eina_Bool _efl_egueb_window_x_event_window_configure(void *data,
 		int type, void *event)
 {
-	printf("configure\n");
+	Efl_Egueb_Window_X *thiz = data;
+	Ecore_X_Event_Window_Configure *ev = event;
+
+	if (thiz->win != ev->win) return EINA_TRUE;
+	
+	printf("configure wm: %d %d\n", ev->from_wm, ev->override);
 	return EINA_TRUE;
 }
 
@@ -135,17 +145,11 @@ static Eina_Bool _efl_egueb_window_x_event_window_show(void *data,
 		int type, void *event)
 {
 	Efl_Egueb_Window_X *thiz = data;
+	Efl_Egueb_Window *base = thiz->base;
 	Ecore_X_Event_Window_Show *ev = event;
 	Ecore_X_GC gc;
 
 	if (thiz->win != ev->win) return EINA_TRUE;
-	egueb_dom_document_process(thiz->base->doc);
-	/* draw the whole area */
-	egueb_dom_feature_render_draw(thiz->base->render, thiz->s, ENESIM_ROP_FILL, NULL, 0, 0, NULL);
-	/* convert */
-	enesim_converter_surface(thiz->s, thiz->b);
-	/* upload */
-	ecore_x_image_put(thiz->xim, thiz->win, NULL, 0, 0, 0, 0, thiz->w, thiz->h);
 	return EINA_TRUE;
 }
 
@@ -228,6 +232,7 @@ static Eina_Bool _efl_egueb_window_x_visual_to_format(Ecore_X_Visual *v,
 
 static Eina_Bool _efl_egueb_window_x_buffer_setup(Efl_Egueb_Window_X *thiz)
 {
+	Efl_Egueb_Window *base = thiz->base;
 	Enesim_Buffer_Format format;
 	Enesim_Buffer_Sw_Data sdata;
 	int bpl;
@@ -242,11 +247,11 @@ static Eina_Bool _efl_egueb_window_x_buffer_setup(Efl_Egueb_Window_X *thiz)
 		return EINA_FALSE;
 	}
 	/* create the ximage */
-	thiz->xim = ecore_x_image_new(thiz->w, thiz->h, thiz->visual, thiz->depth);
+	thiz->xim = ecore_x_image_new(base->w, base->h, thiz->visual, thiz->depth);
 	if (!thiz->xim)
 		return EINA_FALSE;
 	data = ecore_x_image_data_get(thiz->xim, &bpl, &rows, &bpp);
-	printf("format %d. (%d %d) %d %d %d\n", format, thiz->w, thiz->h, bpl, rows, bpp);
+	printf("format %d. (%d %d) %d %d %d\n", format, base->w, base->h, bpl, rows, bpp);
 	/* FIXME ecore is giving xrgb8888 format, weird ... */
 	format = ENESIM_BUFFER_FORMAT_XRGB8888;
 	switch (format)
@@ -270,13 +275,13 @@ static Eina_Bool _efl_egueb_window_x_buffer_setup(Efl_Egueb_Window_X *thiz)
 	}
 	
 	/* create the buffer */
-	thiz->b = enesim_buffer_new_data_from(format, thiz->w, thiz->h, EINA_FALSE, &sdata, NULL, NULL);
-	if (!thiz->b)
+	base->b = enesim_buffer_new_data_from(format, base->w, base->h, EINA_FALSE, &sdata, NULL, NULL);
+	if (!base->b)
 	{
 		ecore_x_image_free(thiz->xim);
 		return EINA_FALSE;
 	}
-	thiz->s = enesim_surface_new(ENESIM_FORMAT_ARGB8888, thiz->w, thiz->h);
+	base->s = enesim_surface_new(ENESIM_FORMAT_ARGB8888, base->w, base->h);
 
 	return EINA_TRUE;
 }
@@ -321,34 +326,27 @@ static void _efl_egueb_window_x_event_unregister(Efl_Egueb_Window_X *thiz)
 			ecore_event_handler_del(thiz->handlers[i]);
 	}
 }
-
-static void _efl_egueb_window_x_init(void)
-{
-	_init_count++;
-	if (_init_count > 1) return;
-}
-
-static void _efl_egueb_window_x_deinit(void)
-{
-	if (!_init_count) return;
-	if (_init_count == 1)
-	{
-	}
-	_init_count--;
-}
 /*----------------------------------------------------------------------------*
  *                        Window descriptor interface                         *
  *----------------------------------------------------------------------------*/
 static void _efl_egueb_window_x_free(void *data)
 {
 	Efl_Egueb_Window_X *thiz = data;
+
 	_efl_egueb_window_x_event_unregister(thiz);
 	ecore_x_image_free(thiz->xim);
-	enesim_buffer_unref(thiz->b);
+}
+
+static void _efl_egueb_window_x_output_update(void *data, Eina_Rectangle *area)
+{
+	Efl_Egueb_Window_X *thiz = data;
+
+	_update_area(thiz, area);
 }
 
 static Efl_Egueb_Window_Descriptor _descriptor = {
-	/* .free 	= */ _efl_egueb_window_x_free,
+	/* .output_update 	= */ _efl_egueb_window_x_output_update,
+	/* .free 		= */ _efl_egueb_window_x_free,
 };
 /*============================================================================*
  *                                 Global                                     *
@@ -368,29 +366,33 @@ EAPI Efl_Egueb_Window * efl_egueb_window_x_new(Egueb_Dom_Node *doc,
 	Eina_Bool argb = EINA_FALSE;
 
 	if (!ecore_x_init(display)) return NULL;
-	_efl_egueb_window_x_init();
+	thiz = calloc(1, sizeof(Efl_Egueb_Window_X));
+	ret = efl_egueb_window_new(doc, x, y, w, h, &_descriptor, thiz);
+	if (!ret)
+	{
+		free(thiz);
+		return NULL;
+	}
 
 	if (parent)
 		argb = ecore_x_window_argb_get(parent);
 
 	if (argb)
-		w = ecore_x_window_argb_new(parent, x, y, w, h);
+		w = ecore_x_window_argb_new(parent, x, y, ret->w, ret->h);
 
-	win = ecore_x_window_new(parent, x, y, w, h);
+	win = ecore_x_window_new(parent, x, y, ret->w, ret->h);
 	ecore_x_window_defaults_set(win);
 
 	screen = _efl_egueb_window_x_screen_get(parent);
 	ecore_x_window_attributes_get(win, &at);
 
-	thiz = calloc(1, sizeof(Efl_Egueb_Window_X));
 	thiz->win = win;
 	thiz->screen = screen;
 	thiz->visual = at.visual;
 	thiz->colormap = at.colormap;
 	thiz->depth = at.depth;
 	thiz->argb = argb;
-	thiz->w = w;
-	thiz->h = h;
+	thiz->base = ret;
 
 	_efl_egueb_window_x_event_register(thiz);
 
@@ -404,9 +406,6 @@ EAPI Efl_Egueb_Window * efl_egueb_window_x_new(Egueb_Dom_Node *doc,
 		return NULL;
 	}
 	ecore_x_window_show(win);
-
-	ret = efl_egueb_window_new(doc, &_descriptor, thiz);
-	thiz->base = ret;
 
 	return ret;
 }

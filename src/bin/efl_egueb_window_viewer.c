@@ -45,8 +45,8 @@ int main(int argc, char *argv[])
 	struct stat st;
 
 	/* default options */
-	width = 640;
-	height = 480;
+	width = -1;
+	height = -1;
 	fps = 30;
 
 	if (!efl_svg_init())
