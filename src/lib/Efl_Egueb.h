@@ -15,26 +15,17 @@
  * License along with this library.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef _EFL_SVG_PRIVATE_H_
-#define _EFL_SVG_PRIVATE_H_
+#ifndef _EFL_EGUEB_H_
+#define _EFL_EGUEB_H_
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
-
-#include "efl_svg_build.h"
-
-#define CRI(...) EINA_LOG_DOM_CRIT(efl_svg_log, __VA_ARGS__)
-#define ERR(...) EINA_LOG_DOM_ERR(efl_svg_log, __VA_ARGS__)
-#define WRN(...) EINA_LOG_DOM_WARN(efl_svg_log, __VA_ARGS__)
-#define INF(...) EINA_LOG_DOM_INFO(efl_svg_log, __VA_ARGS__)
-#define DBG(...) EINA_LOG_DOM_DBG(efl_svg_log, __VA_ARGS__)
-
-extern int efl_svg_log;
-
+#include <Eina.h>
 #include <Evas.h>
-#include <Ecore.h>
+#include <Egueb_Dom.h>
 
-#include <Egueb_Svg.h>
+#include "efl_egueb_build.h"
 
-#endif
+#include "efl_egueb_main.h"
+#include "efl_egueb_smart.h"
+#include "efl_egueb_window.h"
+
+#endif /* _EFL_EGUEB_H_ */

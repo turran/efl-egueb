@@ -8,7 +8,7 @@ m4_define([lt_cur], m4_eval(v_maj + v_min))
 m4_define([lt_rev], v_mic)
 m4_define([lt_age], v_min)
 
-AC_INIT([efl_svg], [v_ver], [enesim-devel@googlegroups.com])
+AC_INIT([efl_egueb], [v_ver], [enesim-devel@googlegroups.com])
 AC_PREREQ([2.60])
 AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_MACRO_DIR([m4])
@@ -52,7 +52,7 @@ fi
 
 ### Checks for libraries
 
-requirements_pc="egueb-dom >= 0.0.23 egueb-svg >= 0.0.23 enesim >= 0.0.15 ecore >= 1.2.0 evas >= 1.2.0 eina >= 1.2.0"
+requirements_pc="egueb-dom >= 0.0.23 enesim >= 0.0.15 ecore >= 1.2.0 evas >= 1.2.0 eina >= 1.2.0"
 PKG_CHECK_EXISTS([evas-opengl-x11 >= 1.2.0 enesim_opengl >= 0.0.15],
    [
     have_gl="yes"
@@ -61,11 +61,11 @@ PKG_CHECK_EXISTS([evas-opengl-x11 >= 1.2.0 enesim_opengl >= 0.0.15],
    ],
    [have_gl="no"])
 AC_SUBST([requirements_pc])
-PKG_CHECK_MODULES([EFL_SVG], [${requirements_pc}])
+PKG_CHECK_MODULES([EFL_EGUEB], [${requirements_pc}])
 
-PKG_CHECK_MODULES([EFL_SVG_BIN], [egueb-dom >= 0.0.23 egueb-svg >= 0.0.23 enesim >= 0.0.15 ecore-evas >= 1.2.0 ecore >= 1.2.0 evas >= 1.2.0 eina >= 1.2.0])
+PKG_CHECK_MODULES([EFL_EGUEB_BIN], [egueb-dom >= 0.0.23 enesim >= 0.0.15 ecore-evas >= 1.2.0 ecore >= 1.2.0 evas >= 1.2.0 eina >= 1.2.0])
 
-PKG_CHECK_MODULES([EFL_SVG_EDJE_EXTERNAL], [edje >= 1.0.99], [have_edje="yes"], [have_edje="no"])
+PKG_CHECK_MODULES([EFL_EGUEB_EDJE_EXTERNAL], [edje >= 1.0.99], [have_edje="yes"], [have_edje="no"])
 
 build_edje_external="no"
 if test "x${have_edje}" = "xyes" ; then
@@ -86,7 +86,7 @@ AC_ARG_ENABLE([ecore-x], [AS_HELP_STRING([--enable-ecore-x], [Enable Ecore X win
   ],
   [want_ecore_x="yes"]
 )
-PKG_CHECK_MODULES([EFL_SVG_X], [ecore-x], [have_ecore_x="yes"], [have_ecore_x="no"])
+PKG_CHECK_MODULES([EFL_EGUEB_X], [ecore-x], [have_ecore_x="yes"], [have_ecore_x="no"])
 build_ecore_x="no"
 
 if test "x${have_ecore_x}" = "xyes" -a "x${want_ecore_x}" = "xyes"; then
@@ -113,7 +113,7 @@ AM_CONDITIONAL([BUILD_ECORE_X], [test "x${build_ecore_x}" = "xyes"])
 
 AM_PROG_CC_C_O
 
-EFL_CHECK_COMPILER_FLAGS([EFL_SVG], [-Wall -Wextra -Wshadow])
+EFL_CHECK_COMPILER_FLAGS([EFL_EGUEB], [-Wall -Wextra -Wshadow])
 
 
 ### Checks for linker characteristics

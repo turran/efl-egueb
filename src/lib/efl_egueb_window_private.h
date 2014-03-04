@@ -37,6 +37,7 @@ struct _Efl_Egueb_Window
 	Egueb_Dom_Feature *render;
 	Egueb_Dom_Feature *window;
 	Egueb_Dom_Feature *animation;
+	Egueb_Dom_Feature *ui;
 	int x;
 	int y;
 	int w;

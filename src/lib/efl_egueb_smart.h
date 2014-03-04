@@ -15,17 +15,14 @@
  * License along with this library.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef _EFL_SVG_H_
-#define _EFL_SVG_H_
+#ifndef _EFL_EGUEB_SMART_H_
+#define _EFL_EGUEB_SMART_H_
 
-#include <Eina.h>
-#include <Evas.h>
-#include <Egueb_Dom.h>
+EAPI Evas_Object * efl_egueb_smart_new(Evas *e);
+EAPI Egueb_Dom_Node * efl_egueb_smart_document_get(Evas_Object *o);
+EAPI void efl_egueb_smart_file_set(Evas_Object *o, const char *file);
+EAPI const char * efl_egueb_smart_file_get(Evas_Object *o);
+EAPI void efl_egueb_smart_debug_damage_set(Evas_Object *o, Eina_Bool debug);
+EAPI void efl_egueb_smart_fps_set(Evas_Object *o, int fps);
 
-#include "efl_svg_build.h"
-
-#include "efl_svg_main.h"
-#include "efl_svg_smart.h"
-#include "efl_egueb_window.h"
-
-#endif /* _EFL_SVG_SMART_H_ */
+#endif

@@ -3,7 +3,7 @@
 
 #include <Egueb_Svg.h>
 
-#include "Efl_Svg.h"
+#include "Efl_Egueb.h"
 
 typedef struct _Efl_Egueb_Window_Viewer
 {
@@ -49,8 +49,8 @@ int main(int argc, char *argv[])
 	height = -1;
 	fps = 30;
 
-	if (!efl_svg_init())
-		goto efl_svg_failed;
+	if (!efl_egueb_init())
+		goto efl_egueb_failed;
 
 	while ((ret = getopt_long(argc, argv, short_options, long_options,
 			&option)) != -1)
@@ -112,13 +112,13 @@ int main(int argc, char *argv[])
 	ecore_main_loop_begin();
 
 	efl_egueb_window_free(w);
-	efl_svg_shutdown();
+	efl_egueb_shutdown();
 
 	return 0;
 
 shutdown_egueb_svg:
-	efl_svg_shutdown();
-efl_svg_failed:
+	efl_egueb_shutdown();
+efl_egueb_failed:
 	return -1;
 }
 

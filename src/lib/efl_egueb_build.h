@@ -15,15 +15,15 @@
  * License along with this library.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef _EFL_SVG_BUILD_H_
-#define _EFL_SVG_BUILD_H_
+#ifndef _EFL_EGUEB_BUILD_H_
+#define _EFL_EGUEB_BUILD_H_
 
 #ifdef EAPI
 # undef EAPI
 #endif
 
 #ifdef _WIN32
-# ifdef EFL_SVG_BUILD
+# ifdef EFL_EGUEB_BUILD
 #  ifdef DLL_EXPORT
 #   define EAPI __declspec(dllexport)
 #  else
@@ -31,7 +31,7 @@
 #  endif /* ! DLL_EXPORT */
 # else
 #  define EAPI __declspec(dllimport)
-# endif /* ! EFL_SVG_BUILD */
+# endif /* ! EFL_EGUEB_BUILD */
 #else
 # ifdef __GNUC__
 #  if __GNUC__ >= 4

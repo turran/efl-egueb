@@ -15,10 +15,10 @@
  * License along with this library.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#include "efl_svg_private.h"
+#include "efl_egueb_private.h"
 
 #if BUILD_ECORE_X
-#include "efl_svg_main.h"
+#include "efl_egueb_main.h"
 #include "efl_egueb_window.h"
 
 #include "efl_egueb_window_private.h"

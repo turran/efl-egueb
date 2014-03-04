@@ -15,8 +15,8 @@
  * License along with this library.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#include "efl_svg_private.h"
-#include "efl_svg_main.h"
+#include "efl_egueb_private.h"
+#include "efl_egueb_main.h"
 #include "efl_egueb_window.h"
 
 #include "efl_egueb_window_private.h"
@@ -84,6 +84,7 @@ static Eina_Bool _efl_egueb_window_mouse_move(void *data,
 		return EINA_TRUE;
 
 	printf("mouse move\n");
+	egueb_dom_feature_ui_feed_mouse_move(thiz->ui, ev->x, ev->y);
 	return EINA_TRUE;
 }
 
@@ -176,7 +177,6 @@ Efl_Egueb_Window * efl_egueb_window_new(Egueb_Dom_Node *doc,
 	Efl_Egueb_Window *thiz;
 	Egueb_Dom_Feature *render;
 	Egueb_Dom_Feature *window;
-	Egueb_Dom_Feature *animation;
 	int cw, ch;
 
 	if (!doc) return NULL;
@@ -228,19 +228,22 @@ Efl_Egueb_Window * efl_egueb_window_new(Egueb_Dom_Node *doc,
 		h = ch;
 
 	printf("Using size of %d %d\n", w, h);
-	animation = egueb_dom_node_feature_get(doc, EGUEB_DOM_FEATURE_ANIMATION_NAME, NULL);
-
 	thiz = calloc(1, sizeof(Efl_Egueb_Window));
 	thiz->d = d;
 	thiz->data = data;
 	thiz->doc = doc;
 	thiz->render = render;
 	thiz->window = window;
-	thiz->animation = animation;
 	thiz->w = w;
 	thiz->h = h;
 	thiz->x = x;
 	thiz->y = y;
+
+	/* optional features */
+	thiz->ui = egueb_dom_node_feature_get(thiz->doc,
+			EGUEB_DOM_FEATURE_UI_NAME, NULL);
+	thiz->animation = egueb_dom_node_feature_get(thiz->doc,
+			EGUEB_DOM_FEATURE_ANIMATION_NAME, NULL);
 
 	/* register our own idler */
 	thiz->idle_enterer = ecore_idle_enterer_add(_efl_egueb_window_idle_enterer_cb, thiz);
@@ -299,6 +302,8 @@ EAPI void efl_egueb_window_free(Efl_Egueb_Window *thiz)
 	ecore_idle_enterer_del(thiz->idle_enterer);
 	if (thiz->animator)
 		ecore_timer_del(thiz->animator);
+	if (thiz->ui)
+		egueb_dom_feature_unref(thiz->ui);
 	if (thiz->animation)
 		egueb_dom_feature_unref(thiz->animation);
 	if (thiz->window)

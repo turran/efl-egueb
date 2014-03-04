@@ -15,10 +15,10 @@
  * License along with this library.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef _EFL_SVG_MAIN_H_
-#define _EFL_SVG_MAIN_H_
+#ifndef _EFL_EGUEB_MAIN_H_
+#define _EFL_EGUEB_MAIN_H_
 
-EAPI int efl_svg_init(void);
-EAPI int efl_svg_shutdown(void);
+EAPI int efl_egueb_init(void);
+EAPI int efl_egueb_shutdown(void);
 
-#endif /*_EFL_SVG_MAIN_H*/
+#endif /*_EFL_EGUEB_MAIN_H*/

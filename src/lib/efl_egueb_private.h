@@ -15,14 +15,26 @@
  * License along with this library.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef _EFL_SVG_SMART_H_
-#define _EFL_SVG_SMART_H_
+#ifndef _EFL_EGUEB_PRIVATE_H_
+#define _EFL_EGUEB_PRIVATE_H_
 
-EAPI Evas_Object * efl_svg_smart_new(Evas *e);
-EAPI Egueb_Dom_Node * efl_svg_smart_document_get(Evas_Object *o);
-EAPI void efl_svg_smart_file_set(Evas_Object *o, const char *file);
-EAPI const char * efl_svg_smart_file_get(Evas_Object *o);
-EAPI void efl_svg_smart_debug_damage_set(Evas_Object *o, Eina_Bool debug);
-EAPI void efl_svg_smart_fps_set(Evas_Object *o, int fps);
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
+
+#include "efl_egueb_build.h"
+
+#define CRI(...) EINA_LOG_DOM_CRIT(efl_egueb_log, __VA_ARGS__)
+#define ERR(...) EINA_LOG_DOM_ERR(efl_egueb_log, __VA_ARGS__)
+#define WRN(...) EINA_LOG_DOM_WARN(efl_egueb_log, __VA_ARGS__)
+#define INF(...) EINA_LOG_DOM_INFO(efl_egueb_log, __VA_ARGS__)
+#define DBG(...) EINA_LOG_DOM_DBG(efl_egueb_log, __VA_ARGS__)
+
+extern int efl_egueb_log;
+
+#include <Evas.h>
+#include <Ecore.h>
+
+#include <Egueb_Dom.h>
 
 #endif
