@@ -1,8 +1,6 @@
 #include <stdio.h>
 #include <getopt.h>
 
-#include <Egueb_Svg.h>
-
 #include "Efl_Egueb.h"
 
 typedef struct _Efl_Egueb_Window_Viewer
