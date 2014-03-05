@@ -83,8 +83,7 @@ static Eina_Bool _efl_egueb_window_mouse_move(void *data,
 	if (!_check_window(thiz, ev->window))
 		return EINA_TRUE;
 
-	printf("mouse move\n");
-	egueb_dom_feature_ui_feed_mouse_move(thiz->ui, ev->x, ev->y);
+	if (thiz->ui) egueb_dom_feature_ui_feed_mouse_move(thiz->ui, ev->x, ev->y);
 	return EINA_TRUE;
 }
 

@@ -417,7 +417,7 @@ static Eina_Bool _efl_egueb_smart_idler_cb(void *data)
 	 * for the damages
 	 */
 	if (!egueb_dom_document_needs_process(thiz->doc))
-		goto done;
+		goto draw;
 
 	/* ok, lets process the document and check for its damages */
 	process_start = _efl_egueb_smart_timestamp_get();
@@ -451,6 +451,7 @@ static Eina_Bool _efl_egueb_smart_idler_cb(void *data)
 		goto no_surface;
 
 	/* get the damages */
+draw:
 	_efl_egueb_smart_damage_clear(thiz);
 	egueb_dom_feature_render_damages_get(thiz->render, thiz->s, _efl_egueb_smart_damages, thiz);
 	if (!thiz->damage_rectangles) goto done;
