@@ -68,7 +68,7 @@ static inline void _mask_to_offset_and_length(int value, uint8_t *offset, uint8_
 static void _update_area(Efl_Egueb_Window_X *thiz, Eina_Rectangle *area)
 {
 	/* upload */
-	ecore_x_image_put(thiz->xim, thiz->win, NULL, 0, 0, area->x, area->y, area->w, area->h);
+	ecore_x_image_put(thiz->xim, thiz->win, NULL, area->x, area->y, area->x, area->y, area->w, area->h);
 }
 /*----------------------------------------------------------------------------*
  *                               Event handlers                               *
