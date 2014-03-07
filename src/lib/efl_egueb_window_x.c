@@ -32,6 +32,7 @@
 typedef struct _Efl_Egueb_Window_X
 {
 	Efl_Egueb_Window *base;
+	Enesim_Buffer_Format format;
 	Ecore_X_Window win;
 	Ecore_X_Screen *screen;
 	Ecore_X_Visual visual;
@@ -70,6 +71,70 @@ static void _update_area(Efl_Egueb_Window_X *thiz, Eina_Rectangle *area)
 	/* upload */
 	ecore_x_image_put(thiz->xim, thiz->win, NULL, area->x, area->y, area->x, area->y, area->w, area->h);
 }
+
+static Eina_Bool _efl_egueb_window_x_buffer_update(Efl_Egueb_Window_X *thiz, int w, int h)
+{
+	Efl_Egueb_Window *base = thiz->base;
+	Enesim_Buffer_Sw_Data sdata;
+	int bpl;
+	int rows;
+	int bpp;
+	void *data;
+
+	/* destroy the previous buffer */
+	if (base->s)
+	{
+		enesim_surface_unref(base->s);
+		base->s = NULL;
+	}
+	if (base->b)
+	{
+		enesim_buffer_unref(base->b);
+		base->b = NULL;
+	}
+	if (thiz->xim)
+	{
+		ecore_x_image_free(thiz->xim);
+		thiz->xim = NULL;
+	}
+
+	/* create the ximage */
+	thiz->xim = ecore_x_image_new(w, h, thiz->visual, thiz->depth);
+	if (!thiz->xim)
+		return EINA_FALSE;
+
+	data = ecore_x_image_data_get(thiz->xim, &bpl, &rows, &bpp);
+	switch (thiz->format)
+	{
+		case ENESIM_BUFFER_FORMAT_RGB888:
+		sdata.rgb888.plane0_stride = bpl;
+		sdata.rgb888.plane0 = data;
+		break;
+
+		case ENESIM_BUFFER_FORMAT_BGR888:
+		sdata.bgr888.plane0_stride = bpl;
+		sdata.bgr888.plane0 = data;
+
+		case ENESIM_BUFFER_FORMAT_XRGB8888:
+		sdata.xrgb8888.plane0_stride = bpl;
+		sdata.xrgb8888.plane0 = data;
+		break;
+
+		default:
+		break;
+	}
+
+	/* create the buffer */
+	base->b = enesim_buffer_new_data_from(thiz->format, w, h, EINA_FALSE, &sdata, NULL, NULL);
+	if (!base->b)
+	{
+		ecore_x_image_free(thiz->xim);
+		return EINA_FALSE;
+	}
+	base->s = enesim_surface_new(ENESIM_FORMAT_ARGB8888, w, h);
+	return EINA_TRUE;
+}
+
 /*----------------------------------------------------------------------------*
  *                               Event handlers                               *
  *----------------------------------------------------------------------------*/
@@ -126,11 +191,18 @@ static Eina_Bool _efl_egueb_window_x_event_window_configure(void *data,
 		int type, void *event)
 {
 	Efl_Egueb_Window_X *thiz = data;
+	Efl_Egueb_Window *base = thiz->base;
 	Ecore_X_Event_Window_Configure *ev = event;
 
 	if (thiz->win != ev->win) return EINA_TRUE;
 	
 	printf("configure wm: %d %d\n", ev->from_wm, ev->override);
+	/* check the size */
+	if (ev->w != base->w || ev->h != base->h)
+	{
+		_efl_egueb_window_x_buffer_update(thiz, ev->w, ev->h);
+		efl_egueb_window_update_size(base, ev->w, ev->h);
+	}
 	return EINA_TRUE;
 }
 
@@ -233,55 +305,16 @@ static Eina_Bool _efl_egueb_window_x_visual_to_format(Ecore_X_Visual *v,
 static Eina_Bool _efl_egueb_window_x_buffer_setup(Efl_Egueb_Window_X *thiz)
 {
 	Efl_Egueb_Window *base = thiz->base;
-	Enesim_Buffer_Format format;
-	Enesim_Buffer_Sw_Data sdata;
-	int bpl;
-	int rows;
-	int bpp;
-	void *data;
 
 	/* get the format based on the x attributes */
-	if (!_efl_egueb_window_x_visual_to_format(thiz->visual, thiz->depth, &format))
+	if (!_efl_egueb_window_x_visual_to_format(thiz->visual, thiz->depth, &thiz->format))
 	{
 		printf("no format\n");
 		return EINA_FALSE;
 	}
-	/* create the ximage */
-	thiz->xim = ecore_x_image_new(base->w, base->h, thiz->visual, thiz->depth);
-	if (!thiz->xim)
-		return EINA_FALSE;
-	data = ecore_x_image_data_get(thiz->xim, &bpl, &rows, &bpp);
-	printf("format %d. (%d %d) %d %d %d\n", format, base->w, base->h, bpl, rows, bpp);
 	/* FIXME ecore is giving xrgb8888 format, weird ... */
-	format = ENESIM_BUFFER_FORMAT_XRGB8888;
-	switch (format)
-	{
-		case ENESIM_BUFFER_FORMAT_RGB888:
-		sdata.rgb888.plane0_stride = bpl;
-		sdata.rgb888.plane0 = data;
-		break;
-
-		case ENESIM_BUFFER_FORMAT_BGR888:
-		sdata.bgr888.plane0_stride = bpl;
-		sdata.bgr888.plane0 = data;
-
-		case ENESIM_BUFFER_FORMAT_XRGB8888:
-		sdata.xrgb8888.plane0_stride = bpl;
-		sdata.xrgb8888.plane0 = data;
-		break;
-
-		default:
-		break;
-	}
-	
-	/* create the buffer */
-	base->b = enesim_buffer_new_data_from(format, base->w, base->h, EINA_FALSE, &sdata, NULL, NULL);
-	if (!base->b)
-	{
-		ecore_x_image_free(thiz->xim);
-		return EINA_FALSE;
-	}
-	base->s = enesim_surface_new(ENESIM_FORMAT_ARGB8888, base->w, base->h);
+	thiz->format = ENESIM_BUFFER_FORMAT_XRGB8888;
+	_efl_egueb_window_x_buffer_update(thiz, base->w, base->h);
 
 	return EINA_TRUE;
 }

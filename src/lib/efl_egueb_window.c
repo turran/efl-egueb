@@ -169,6 +169,17 @@ done:
 /*============================================================================*
  *                                 Global                                     *
  *============================================================================*/
+void efl_egueb_window_update_size(Efl_Egueb_Window *thiz, int w, int h)
+{
+	thiz->w = w;
+	thiz->h = h;
+	if (thiz->window)
+	{
+		egueb_dom_feature_window_content_size_set(thiz->window,
+				thiz->w, thiz->h);
+	}
+}
+
 Efl_Egueb_Window * efl_egueb_window_new(Egueb_Dom_Node *doc,
 		int x, int y, int w, int h,
 		const Efl_Egueb_Window_Descriptor *d, void *data)
@@ -201,9 +212,6 @@ Efl_Egueb_Window * efl_egueb_window_new(Egueb_Dom_Node *doc,
 		egueb_dom_node_unref(doc);
 		return NULL;
 	}
-
-	Egueb_Dom_Feature_Window_Type type;
-	egueb_dom_feature_window_type_get(window, &type);
 
 	/* set the content size */
 	egueb_dom_feature_window_content_size_set(window, w, h);

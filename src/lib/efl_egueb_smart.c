@@ -272,7 +272,8 @@ static void _efl_egueb_smart_reconfigure(Efl_Egueb_Smart *thiz)
 	evas_object_resize(thiz->img_clip, w, h);
 
 	/* resize the document content */
-	egueb_dom_feature_window_content_size_set(thiz->window, w, h);
+	if (thiz->window)
+		egueb_dom_feature_window_content_size_set(thiz->window, w, h);
 
 	/* center the image */
 	evas_object_image_size_get(thiz->img, &iw, &ih);
@@ -336,6 +337,7 @@ static void _efl_egueb_smart_opengl_surface_reconfigure(Efl_Egueb_Smart *thiz, E
 static void _efl_egueb_smart_sw_surface_reconfigure(Efl_Egueb_Smart *thiz, Evas_Coord iw,
 		Evas_Coord ih)
 {
+	printf(">>> surface recon!\n");
 	if (thiz->s)
 	{
 		enesim_surface_unref(thiz->s);
@@ -413,6 +415,9 @@ static Eina_Bool _efl_egueb_smart_idler_cb(void *data)
 		new_svg = EINA_TRUE;
 	}
 
+	if (!thiz->doc)
+		goto done;
+
 	/* check if we need to process the document, if not, then dont ask
 	 * for the damages
 	 */
@@ -447,11 +452,11 @@ static Eina_Bool _efl_egueb_smart_idler_cb(void *data)
 	/* FIXME from the docs, looks like if i put true on the second argument, the whole data
 	 * will be invalidated, but then, it says that i should call update_add ... weird
 	 */
+	/* get the damages */
+draw:
 	if (!thiz->s)
 		goto no_surface;
 
-	/* get the damages */
-draw:
 	_efl_egueb_smart_damage_clear(thiz);
 	egueb_dom_feature_render_damages_get(thiz->render, thiz->s, _efl_egueb_smart_damages, thiz);
 	if (!thiz->damage_rectangles) goto done;
@@ -797,6 +802,11 @@ EAPI void efl_egueb_smart_file_set(Evas_Object *o, const char *file)
 	}
 	egueb_dom_parser_parse(im, &thiz->doc);
 	enesim_stream_unref(im);
+
+	if (!thiz->doc)
+	{
+		return;
+	}
 
 	/* get the features */
 	thiz->render = egueb_dom_node_feature_get(thiz->doc,
