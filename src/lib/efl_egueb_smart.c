@@ -102,12 +102,6 @@ static Evas_Smart *_smart = NULL;
 /*----------------------------------------------------------------------------*
  *                           Application interface                            *
  *----------------------------------------------------------------------------*/
-static const char * _efl_egueb_smart_filename_get(void *user_data)
-{
-	Efl_Egueb_Smart *thiz = user_data;
-	return thiz->file;
-}
-
 #if 0
 static const char * _efl_egueb_smart_base_dir_get(Egueb_Dom_Node *e EINA_UNUSED, void *data)
 {
