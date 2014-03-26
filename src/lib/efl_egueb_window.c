@@ -39,13 +39,37 @@ static inline Eina_Bool _check_window(Efl_Egueb_Window *thiz, Ecore_Window w)
 	else return EINA_FALSE;
 }
 
+static void _efl_egueb_window_io_data_load(Egueb_Dom_String *location,
+		Egueb_Dom_Event_IO_Data_Cb cb, Egueb_Dom_Node *node)
+{
+	const char *filename;
+
+	filename = egueb_dom_string_string_get(location);
+	/* check the scheme */
+	if (!strncmp(filename, "file://", 7))
+	{
+		Enesim_Stream *s;
+
+		s = enesim_stream_file_new(filename + 7, "r");
+		if (s)
+		{
+			DBG("Data '%s' loaded correctly", filename);
+			cb(node, s);
+		}
+	}
+	else
+	{
+		WRN("Unsupported schema '%s'", filename);
+	}
+}
+
 static void _efl_egueb_window_io_relative_data_cb(Egueb_Dom_Uri *uri,
 		Egueb_Dom_Event *ev, void *data)
 {
 	Egueb_Dom_Node *doc;
 	Egueb_Dom_Node *node;
 	Egueb_Dom_String *location;
-	Enesim_Stream *s;
+	Egueb_Dom_Event_IO_Data_Cb cb;
 	char *s_location;
 	char *filename;
 	char *dir;
@@ -79,24 +103,10 @@ static void _efl_egueb_window_io_relative_data_cb(Egueb_Dom_Uri *uri,
 	if (ret < 0)
 		goto beach;
 
-	/* check the scheme */
-	if (!strncmp(filename, "file://", 7))
-	{
-		s = enesim_stream_file_new(filename + 7, "r");
-		if (s)
-		{
-			Egueb_Dom_Event_IO_Data_Cb cb;
-
-			DBG("Data '%s' loaded correctly", filename);
-			cb = egueb_dom_event_io_data_cb_get(ev);
-			cb(node, s);
-		}
-	}
-	else
-	{
-		WRN("Unsupported schema '%s'", filename);
-	}
-	free(filename);
+	location = egueb_dom_string_steal(filename);
+	cb = egueb_dom_event_io_data_cb_get(ev);
+	_efl_egueb_window_io_data_load(location, cb, node);
+	egueb_dom_string_unref(location);
 beach:
 	egueb_dom_node_unref(node);
 }
@@ -114,6 +124,12 @@ static void _efl_egueb_window_io_data_cb(Egueb_Dom_Event *ev, void *data)
 			uri.location), uri.type);
 	if (uri.type == EGUEB_DOM_URI_TYPE_ABSOLUTE)
 	{
+		Egueb_Dom_Node *node;
+		Egueb_Dom_Event_IO_Data_Cb cb;
+
+		node = egueb_dom_event_target_get(ev);
+		cb = egueb_dom_event_io_data_cb_get(ev);
+		_efl_egueb_window_io_data_load(uri.location, cb, node);
 	}
 	else
 	{
