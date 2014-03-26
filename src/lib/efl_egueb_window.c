@@ -362,7 +362,7 @@ Efl_Egueb_Window * efl_egueb_window_new(Egueb_Dom_Node *doc,
 	egueb_dom_feature_window_content_size_get(window, &cw, &ch);
 	if (cw <= 0 || ch <= 0)
 	{
-		printf("Invalid size of the window %d %d\n", cw, ch);
+		ERR("Invalid size of the window %d %d", cw, ch);
 		egueb_dom_feature_unref(window);
 		egueb_dom_feature_unref(render);
 		egueb_dom_node_unref(doc);
@@ -389,7 +389,7 @@ Efl_Egueb_Window * efl_egueb_window_new(Egueb_Dom_Node *doc,
 	if (h <= 0)
 		h = ch;
 
-	printf("Using size of %d %d\n", w, h);
+	DBG("Using size of %d %d", w, h);
 	thiz->w = w;
 	thiz->h = h;
 	thiz->x = x;
