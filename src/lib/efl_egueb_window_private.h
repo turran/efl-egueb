@@ -34,7 +34,7 @@ typedef struct _Efl_Egueb_Window_Descriptor
 struct _Efl_Egueb_Window
 {
 	Egueb_Dom_Node *doc;
-	Egueb_Dom_Node *io;
+	Egueb_Dom_Feature *io;
 	Egueb_Dom_Feature *render;
 	Egueb_Dom_Feature *window;
 	Egueb_Dom_Feature *animation;

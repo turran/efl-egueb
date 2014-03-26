@@ -392,7 +392,7 @@ Efl_Egueb_Window * efl_egueb_window_new(Egueb_Dom_Node *doc,
 					EGUEB_DOM_EVENT_IO_IMAGE,
 					_efl_egueb_window_io_image_cb,
 					EINA_TRUE, thiz);
-			egueb_dom_node_unref(thiz->io);
+			egueb_dom_feature_unref(thiz->io);
 		}
 		free(thiz);
 		return NULL;
@@ -476,7 +476,7 @@ EAPI void efl_egueb_window_free(Efl_Egueb_Window *thiz)
 				EGUEB_DOM_EVENT_IO_IMAGE,
 				_efl_egueb_window_io_image_cb,
 				EINA_TRUE, thiz);
-		egueb_dom_node_unref(thiz->io);
+		egueb_dom_feature_unref(thiz->io);
 	}
 
 	if (thiz->b)
