@@ -18,6 +18,7 @@
 #ifndef _EFL_EGUEB_WINDOW_PRIVATE_H_
 #define _EFL_EGUEB_WINDOW_PRIVATE_H_
 
+#include "efl_egueb_document_private.h"
 #include <Ecore_Input.h>
 
 typedef void (*Efl_Egueb_Window_Descriptor_Free)(void *data);
@@ -33,11 +34,10 @@ typedef struct _Efl_Egueb_Window_Descriptor
 
 struct _Efl_Egueb_Window
 {
+	Efl_Egueb_Document edoc;
 	Egueb_Dom_Node *doc;
-	Egueb_Dom_Feature *io;
 	Egueb_Dom_Feature *render;
 	Egueb_Dom_Feature *window;
-	Egueb_Dom_Feature *animation;
 	Egueb_Dom_Feature *ui;
 	int x;
 	int y;
@@ -48,13 +48,12 @@ struct _Efl_Egueb_Window
 	Enesim_Buffer *b;
 	/* private */
 	Ecore_Idle_Enterer *idle_enterer;
-	Ecore_Timer *animator;
 	Eina_List *damages;
 	/* the event handlers */
 	Ecore_Event_Handler *handlers[8];
 
 	void *data;
-	const Efl_Egueb_Window_Descriptor *d;
+	const Efl_Egueb_Window_Descriptor *desc;
 };
 
 Efl_Egueb_Window * efl_egueb_window_new(Egueb_Dom_Node *doc,

@@ -18,6 +18,7 @@
 #include "efl_egueb_private.h"
 #include "efl_egueb_main.h"
 #include "efl_egueb_smart.h"
+#include "efl_egueb_document_private.h"
 
 #include <math.h>
 #include <libgen.h>
@@ -49,6 +50,7 @@ typedef struct _Efl_Egueb_Smart
 	/* private */
 	Evas *evas;
 	Evas_Object *o;
+	Efl_Egueb_Document edoc;
 
 	/* image position */
 	Evas_Coord ix, iy;
@@ -68,7 +70,6 @@ typedef struct _Efl_Egueb_Smart
 	Egueb_Dom_Feature *ui;
 
 	Ecore_Idle_Enterer *idler;
-	Ecore_Timer *animator;
 
 	Enesim_Backend backend;
 	Enesim_Surface *s;
@@ -182,15 +183,6 @@ static void _efl_egueb_smart_damage_clear(Efl_Egueb_Smart *thiz)
 		i++;
 	}
 	thiz->damage_count = 0;
-}
-
-static Eina_Bool _efl_egueb_smart_animator_cb(void *data)
-{
-	Efl_Egueb_Smart *thiz = data;
-
-	if (thiz->animation)
-		egueb_dom_feature_animation_tick(thiz->animation);
-	return EINA_TRUE;
 }
 
 static void _efl_egueb_smart_mouse_up(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
@@ -331,7 +323,6 @@ static void _efl_egueb_smart_opengl_surface_reconfigure(Efl_Egueb_Smart *thiz, E
 static void _efl_egueb_smart_sw_surface_reconfigure(Efl_Egueb_Smart *thiz, Evas_Coord iw,
 		Evas_Coord ih)
 {
-	printf(">>> surface recon!\n");
 	if (thiz->s)
 	{
 		enesim_surface_unref(thiz->s);
@@ -375,7 +366,7 @@ static Eina_Bool _efl_egueb_smart_surface_reconfigure(Efl_Egueb_Smart *thiz)
 #endif
 		//evas_object_image_data_update_add(thiz->img, 0, 0, w, h);
 		_efl_egueb_smart_reconfigure(thiz);
-		ERR("<%s> Creating a surface with size %d %d at %d %d",
+		DBG("<%s> Creating a surface with size %d %d at %d %d",
 				evas_object_name_get(thiz->o), w, h, thiz->ix,
 				thiz->iy);
 		return EINA_TRUE;
@@ -494,6 +485,80 @@ done:
 	return EINA_TRUE;
 }
 
+static void _efl_egueb_smart_setup(Efl_Egueb_Smart *thiz, Egueb_Dom_Node *doc)
+{
+	thiz->doc = doc;
+	efl_egueb_document_setup(&thiz->edoc, egueb_dom_node_ref(thiz->doc));
+	/* get the features */
+	thiz->render = egueb_dom_node_feature_get(thiz->doc,
+			EGUEB_DOM_FEATURE_RENDER_NAME, NULL);
+	if (!thiz->render)
+	{
+		egueb_dom_node_unref(thiz->doc);
+		thiz->doc = NULL;
+		return;
+	}
+	thiz->window = egueb_dom_node_feature_get(thiz->doc,
+			EGUEB_DOM_FEATURE_WINDOW_NAME, NULL);
+	if (!thiz->window)
+	{
+		egueb_dom_feature_unref(thiz->render);
+		thiz->render = NULL;
+
+		egueb_dom_node_unref(thiz->doc);
+		thiz->doc = NULL;
+		return;
+	}
+
+	thiz->ui = egueb_dom_node_feature_get(thiz->doc,
+			EGUEB_DOM_FEATURE_UI_NAME, NULL);
+}
+
+static void _efl_egueb_smart_cleanup(Efl_Egueb_Smart *thiz)
+{
+	if (thiz->file)
+	{
+		free(thiz->file);
+		thiz->file = NULL;
+	}
+	if (thiz->base_dir)
+	{
+		free(thiz->base_dir);
+		thiz->base_dir = NULL;
+	}
+
+	if (thiz->render)
+	{
+		egueb_dom_feature_unref(thiz->render);
+		thiz->render = NULL;
+	}
+
+	if (thiz->window)
+	{
+		egueb_dom_feature_unref(thiz->window);
+		thiz->window = NULL;
+	}
+
+	if (thiz->animation)
+	{
+		egueb_dom_feature_unref(thiz->animation);
+		thiz->animation = NULL;
+	}
+
+	if (thiz->ui)
+	{
+		egueb_dom_feature_unref(thiz->ui);
+		thiz->animation = NULL;
+	}
+
+	if (thiz->doc)
+	{
+		efl_egueb_document_cleanup(&thiz->edoc);
+		egueb_dom_node_unref(thiz->doc);
+		thiz->doc = NULL;
+	}
+}
+
 /*----------------------------------------------------------------------------*
  *                           Smart object interface                           *
  *----------------------------------------------------------------------------*/
@@ -546,8 +611,6 @@ static void _efl_egueb_smart_add(Evas_Object *obj)
 
 	/* the idler */
 	thiz->idler = ecore_idle_enterer_add(_efl_egueb_smart_idler_cb, thiz);
-	/* the animator */
-	thiz->animator = ecore_timer_add(1.0/thiz->fps, _efl_egueb_smart_animator_cb, thiz);
 	/* the events */
 	evas_object_event_callback_add(thiz->img, EVAS_CALLBACK_MOUSE_DOWN,
 		_efl_egueb_smart_mouse_down, thiz);
@@ -602,11 +665,10 @@ static void _efl_egueb_smart_del(Evas_Object *obj)
 	Efl_Egueb_Smart *thiz;
 
 	thiz = evas_object_smart_data_get(obj);
+	efl_egueb_smart_file_set(obj, NULL);
 	egueb_dom_node_unref(thiz->doc);
 	/* the idler */
 	ecore_idle_enterer_del(thiz->idler);
-	/* the animator */
-	ecore_timer_del(thiz->animator);
 	/* TODO the gl_surface */
 	/* TODO the gl_pool */
 	/* TODO the damage_objects and rectangles */
@@ -717,6 +779,7 @@ static void _efl_egueb_smart_init(void)
 		_smart = evas_smart_class_new(&sc);
 	}
 }
+
 /*============================================================================*
  *                                 Global                                     *
  *============================================================================*/
@@ -741,52 +804,13 @@ EAPI Egueb_Dom_Node * efl_egueb_smart_document_get(Evas_Object *o)
 EAPI void efl_egueb_smart_file_set(Evas_Object *o, const char *file)
 {
 	Efl_Egueb_Smart *thiz;
+	Egueb_Dom_Node *doc = NULL;
 	Enesim_Stream *im;
 	char base_dir[PATH_MAX];
 	char *tmp;
 
 	thiz = evas_object_smart_data_get(o);
-	if (thiz->file)
-	{
-		free(thiz->file);
-		thiz->file = NULL;
-	}
-	if (thiz->base_dir)
-	{
-		free(thiz->base_dir);
-		thiz->base_dir = NULL;
-	}
-
-	if (thiz->render)
-	{
-		egueb_dom_feature_unref(thiz->render);
-		thiz->render = NULL;
-	}
-
-	if (thiz->window)
-	{
-		egueb_dom_feature_unref(thiz->window);
-		thiz->window = NULL;
-	}
-
-	if (thiz->animation)
-	{
-		egueb_dom_feature_unref(thiz->animation);
-		thiz->animation = NULL;
-	}
-
-	if (thiz->ui)
-	{
-		egueb_dom_feature_unref(thiz->ui);
-		thiz->animation = NULL;
-	}
-
-	if (thiz->doc)
-	{
-		egueb_dom_node_unref(thiz->doc);
-		thiz->doc = NULL;
-	}
-
+	_efl_egueb_smart_cleanup(thiz);
 	if (!file) return;
 
 	im = enesim_stream_file_new(file, "r+");
@@ -794,52 +818,14 @@ EAPI void efl_egueb_smart_file_set(Evas_Object *o, const char *file)
 	{
 		return;
 	}
-	egueb_dom_parser_parse(im, &thiz->doc);
+	egueb_dom_parser_parse(im, &doc);
 	enesim_stream_unref(im);
 
-	if (!thiz->doc)
+	if (!doc)
 	{
 		return;
 	}
-
-	/* get the features */
-	thiz->render = egueb_dom_node_feature_get(thiz->doc,
-			EGUEB_DOM_FEATURE_RENDER_NAME, NULL);
-	if (!thiz->render)
-	{
-		egueb_dom_node_unref(thiz->doc);
-		thiz->doc = NULL;
-		return;
-	}
-	thiz->window = egueb_dom_node_feature_get(thiz->doc,
-			EGUEB_DOM_FEATURE_WINDOW_NAME, NULL);
-	if (!thiz->window)
-	{
-		egueb_dom_feature_unref(thiz->render);
-		thiz->render = NULL;
-
-		egueb_dom_node_unref(thiz->doc);
-		thiz->doc = NULL;
-		return;
-	}
-
-	thiz->animation = egueb_dom_node_feature_get(thiz->doc,
-			EGUEB_DOM_FEATURE_ANIMATION_NAME, NULL);
-	if (!thiz->animation)
-	{
-		egueb_dom_feature_unref(thiz->animation);
-		thiz->animation = NULL;
-
-		egueb_dom_feature_unref(thiz->render);
-		thiz->render = NULL;
-
-		egueb_dom_node_unref(thiz->doc);
-		thiz->doc = NULL;
-		return;
-	}
-
-	thiz->ui = egueb_dom_node_feature_get(thiz->doc,
-			EGUEB_DOM_FEATURE_UI_NAME, NULL);
+	_efl_egueb_smart_setup(thiz, doc);
 
 	thiz->file = strdup(file);
 	strncpy(base_dir, thiz->file, PATH_MAX);
@@ -877,12 +863,7 @@ EAPI void efl_egueb_smart_fps_set(Evas_Object *o, int fps)
 	thiz = evas_object_smart_data_get(o);
 	/* remove the animtor and add another one with the correct fps */
 	thiz->fps = fps;
-
-	if (thiz->animation)
-	{
-		egueb_dom_feature_animation_fps_set(thiz->animation, thiz->fps);
-		ecore_timer_interval_set(thiz->animator, 1.0/thiz->fps);
-	}
+	efl_egueb_document_fps_set(&thiz->edoc, fps);
 }
 
 EAPI void efl_egueb_zoom_and_pan_enable(Evas_Object *o, Eina_Bool enable)

@@ -24,9 +24,6 @@
 #if BUILD_ECORE_X
 #include "Efl_Egueb_Window_X.h"
 #endif
-
-#include <libgen.h>
-#include <stdio.h>
 /*============================================================================*
  *                                  Local                                     *
  *============================================================================*/
@@ -34,143 +31,11 @@ static inline Eina_Bool _check_window(Efl_Egueb_Window *thiz, Ecore_Window w)
 {
 	Ecore_Window real;
 
-	real = thiz->d->window_get(thiz->data);
+	real = thiz->desc->window_get(thiz->data);
 	if (real == w) return EINA_TRUE;
 	else return EINA_FALSE;
 }
 
-static void _efl_egueb_window_io_data_load(Egueb_Dom_String *location,
-		Egueb_Dom_Event_IO_Data_Cb cb, Egueb_Dom_Node *node)
-{
-	const char *filename;
-
-	filename = egueb_dom_string_string_get(location);
-	/* check the scheme */
-	if (!strncmp(filename, "file://", 7))
-	{
-		Enesim_Stream *s;
-
-		s = enesim_stream_file_new(filename + 7, "r");
-		if (s)
-		{
-			DBG("Data '%s' loaded correctly", filename);
-			cb(node, s);
-		}
-	}
-	else
-	{
-		WRN("Unsupported schema '%s'", filename);
-	}
-}
-
-static void _efl_egueb_window_io_relative_data_cb(Egueb_Dom_Uri *uri,
-		Egueb_Dom_Event *ev, void *data)
-{
-	Egueb_Dom_Node *doc;
-	Egueb_Dom_Node *node;
-	Egueb_Dom_String *location;
-	Egueb_Dom_Event_IO_Data_Cb cb;
-	char *s_location;
-	char *filename;
-	char *dir;
-	int ret;
-
-	node = egueb_dom_event_target_get(ev);
-	doc = egueb_dom_node_document_get(node);
-	if (!doc)
-	{
-		WRN("No document available");
-		goto beach;
-	}
-
-	location = egueb_dom_document_uri_get(doc);
-	egueb_dom_node_unref(doc);
-
-	if (!location)
-	{
-		WRN("No URI set on the document");
-		goto beach;
-	}
-
-	s_location =  strdup(egueb_dom_string_string_get(location));
-	egueb_dom_string_unref(location);
-
-	dir = dirname(s_location);
-	ret = asprintf(&filename, "%s/%s", dir,
-			egueb_dom_string_string_get(uri->location));
-
-	free(s_location);
-	if (ret < 0)
-		goto beach;
-
-	location = egueb_dom_string_steal(filename);
-	cb = egueb_dom_event_io_data_cb_get(ev);
-	_efl_egueb_window_io_data_load(location, cb, node);
-	egueb_dom_string_unref(location);
-beach:
-	egueb_dom_node_unref(node);
-}
-
-/* TODO the idea is to use async file loading (either http://, file:// etc) */
-static void _efl_egueb_window_io_data_cb(Egueb_Dom_Event *ev, void *data)
-{
-	Egueb_Dom_Uri uri;
-
-	egueb_dom_event_io_uri_get(ev, &uri);
-	if (uri.fragment != NULL)
-		goto has_fragment;
-
-	DBG("Data requested '%s' (%d)", egueb_dom_string_string_get(
-			uri.location), uri.type);
-	if (uri.type == EGUEB_DOM_URI_TYPE_ABSOLUTE)
-	{
-		Egueb_Dom_Node *node;
-		Egueb_Dom_Event_IO_Data_Cb cb;
-
-		node = egueb_dom_event_target_get(ev);
-		cb = egueb_dom_event_io_data_cb_get(ev);
-		_efl_egueb_window_io_data_load(uri.location, cb, node);
-	}
-	else
-	{
-		_efl_egueb_window_io_relative_data_cb(&uri, ev, data);
-	}
-
-has_fragment:
-	egueb_dom_uri_cleanup(&uri);
-}
-
-static void _efl_egueb_window_io_image_cb(Egueb_Dom_Event *ev, void *data)
-{
-	Egueb_Dom_Event_IO_Image_Cb cb;
-	Egueb_Dom_Node *n;
-	Enesim_Buffer *b = NULL;
-	Enesim_Stream *s;
-	Enesim_Surface *src = NULL;
-
-	s = egueb_dom_event_io_stream_get(ev);
-	if (!s) return;
-
-	cb = egueb_dom_event_io_image_cb_get(ev);
-	n = egueb_dom_event_target_get(ev);
-
-	if (!enesim_image_load(s, NULL, &b, NULL, NULL))
-	{
-		Eina_Error err;
-
-		err = eina_error_get();
-		ERR("Can not load image, error: %s", eina_error_msg_get(err));
-		cb(n, NULL);
-	}
-	else
-	{
-		DBG("Image loaded correectly");
-		src = enesim_surface_new_buffer_from(b);
-	}
-	cb(n, src);
-	egueb_dom_node_unref(n);
-	enesim_stream_unref(s);
-}
 /*----------------------------------------------------------------------------*
  *                               Event handlers                               *
  *----------------------------------------------------------------------------*/
@@ -265,14 +130,6 @@ static Eina_Bool _efl_egueb_window_damages(Egueb_Dom_Feature *e EINA_UNUSED,
 	return EINA_TRUE;
 }
 
-static Eina_Bool _efl_egueb_window_timer_cb(void *data)
-{
-	Efl_Egueb_Window *thiz = data;
-
-	egueb_dom_feature_animation_tick(thiz->animation);
-	return EINA_TRUE;
-}
-
 static Eina_Bool _efl_egueb_window_idle_enterer_cb(void *data)
 {
 	Efl_Egueb_Window *thiz = data;
@@ -291,11 +148,11 @@ static Eina_Bool _efl_egueb_window_idle_enterer_cb(void *data)
 				ENESIM_ROP_FILL, thiz->damages, 0, 0, NULL);
 		/* convert */
 		enesim_converter_surface(thiz->s, thiz->b);
-		if (!thiz->d->output_update)
+		if (!thiz->desc->output_update)
 			goto done;
 		EINA_LIST_FREE(thiz->damages, r)
 		{
-			thiz->d->output_update(thiz->data, r);
+			thiz->desc->output_update(thiz->data, r);
 			free(r);
 		}
 	}
@@ -351,50 +208,22 @@ Efl_Egueb_Window * efl_egueb_window_new(Egueb_Dom_Node *doc,
 	}
 
 	thiz = calloc(1, sizeof(Efl_Egueb_Window));
-	thiz->d = d;
+	efl_egueb_document_setup(&thiz->edoc, egueb_dom_node_ref(doc));
+	thiz->desc = d;
 	thiz->data = data;
 	thiz->doc = doc;
 	thiz->render = render;
 	thiz->window = window;
 
-	/* set the event handlers before */
-	thiz->io = egueb_dom_node_feature_get(thiz->doc,
-			EGUEB_DOM_FEATURE_IO_NAME, NULL);
-	if (thiz->io)
-	{
-		egueb_dom_node_event_listener_add(thiz->doc,
-				EGUEB_DOM_EVENT_IO_DATA,
-				_efl_egueb_window_io_data_cb, EINA_TRUE, thiz);
-		egueb_dom_node_event_listener_add(thiz->doc,
-				EGUEB_DOM_EVENT_IO_IMAGE,
-				_efl_egueb_window_io_image_cb, EINA_TRUE, thiz);
-	}
-
-
 	/* set the content size */
-	egueb_dom_feature_window_content_size_set(window, w, h);
+	egueb_dom_feature_window_content_size_set(thiz->window, w, h);
 	/* now process the document */
 	egueb_dom_document_process(doc);
-	egueb_dom_feature_window_content_size_get(window, &cw, &ch);
+	egueb_dom_feature_window_content_size_get(thiz->window, &cw, &ch);
 	if (cw <= 0 || ch <= 0)
 	{
 		ERR("Invalid size of the window %d %d", cw, ch);
-		egueb_dom_feature_unref(window);
-		egueb_dom_feature_unref(render);
-		egueb_dom_node_unref(doc);
-		if (thiz->io)
-		{
-			egueb_dom_node_event_listener_remove(thiz->doc,
-					EGUEB_DOM_EVENT_IO_DATA,
-					_efl_egueb_window_io_data_cb,
-					EINA_TRUE, thiz);
-			egueb_dom_node_event_listener_remove(thiz->doc,
-					EGUEB_DOM_EVENT_IO_IMAGE,
-					_efl_egueb_window_io_image_cb,
-					EINA_TRUE, thiz);
-			egueb_dom_feature_unref(thiz->io);
-		}
-		free(thiz);
+		efl_egueb_window_free(thiz);
 		return NULL;
 	}
 
@@ -414,21 +243,8 @@ Efl_Egueb_Window * efl_egueb_window_new(Egueb_Dom_Node *doc,
 	/* optional features */
 	thiz->ui = egueb_dom_node_feature_get(thiz->doc,
 			EGUEB_DOM_FEATURE_UI_NAME, NULL);
-	thiz->animation = egueb_dom_node_feature_get(thiz->doc,
-			EGUEB_DOM_FEATURE_ANIMATION_NAME, NULL);
-
 	/* register our own idler */
 	thiz->idle_enterer = ecore_idle_enterer_add(_efl_egueb_window_idle_enterer_cb, thiz);
-	/* register our own timer for the anim in case we have one */
-	if (thiz->animation)
-	{
-		int fps;
-
-		egueb_dom_feature_animation_fps_get(thiz->animation, &fps);
-		if (fps > 0)
-			thiz->animator = ecore_timer_add(1.0/fps, _efl_egueb_window_timer_cb, thiz);
-		//ecore_timer_interval_set(thiz->animator, 1.0/thiz->fps);
-	}
 	/* register the event handlers */
 	thiz->handlers[0] = ecore_event_handler_add(ECORE_EVENT_KEY_DOWN,
 			_efl_egueb_window_key_down, thiz);
@@ -466,38 +282,24 @@ EAPI Efl_Egueb_Window * efl_egueb_window_auto_new(Egueb_Dom_Node *doc,
 
 EAPI void efl_egueb_window_free(Efl_Egueb_Window *thiz)
 {
-	if (thiz->io)
-	{
-		egueb_dom_node_event_listener_remove(thiz->doc,
-				EGUEB_DOM_EVENT_IO_DATA,
-				_efl_egueb_window_io_data_cb,
-				EINA_TRUE, thiz);
-		egueb_dom_node_event_listener_remove(thiz->doc,
-				EGUEB_DOM_EVENT_IO_IMAGE,
-				_efl_egueb_window_io_image_cb,
-				EINA_TRUE, thiz);
-		egueb_dom_feature_unref(thiz->io);
-	}
-
+	efl_egueb_document_cleanup(&thiz->edoc);
 	if (thiz->b)
 		enesim_buffer_unref(thiz->b);
 	if (thiz->s)
 		enesim_surface_unref(thiz->s);
 
-	ecore_idle_enterer_del(thiz->idle_enterer);
-	if (thiz->animator)
-		ecore_timer_del(thiz->animator);
+	if (thiz->idle_enterer)
+		ecore_idle_enterer_del(thiz->idle_enterer);
+
 	if (thiz->ui)
 		egueb_dom_feature_unref(thiz->ui);
-	if (thiz->animation)
-		egueb_dom_feature_unref(thiz->animation);
 	if (thiz->window)
 		egueb_dom_feature_unref(thiz->window);
 	if (thiz->render)
 		egueb_dom_feature_unref(thiz->render);
 	if (thiz->doc)
 		egueb_dom_node_unref(thiz->doc);
-	if (thiz->d->free)
-		thiz->d->free(thiz->data);
+	if (thiz->desc->free)
+		thiz->desc->free(thiz->data);
 	free(thiz);
 }

@@ -13,6 +13,7 @@ src_lib_libefl_egueb_la_CPPFLAGS = \
 @EFL_EGUEB_CFLAGS@
 
 src_lib_libefl_egueb_la_SOURCES = \
+src/lib/efl_egueb_document.c \
 src/lib/efl_egueb_main.c \
 src/lib/efl_egueb_smart.c \
 src/lib/efl_egueb_window.c
