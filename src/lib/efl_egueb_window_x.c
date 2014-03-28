@@ -380,7 +380,8 @@ static void _efl_egueb_window_x_free(void *data)
 	Efl_Egueb_Window_X *thiz = data;
 
 	_efl_egueb_window_x_event_unregister(thiz);
-	ecore_x_image_free(thiz->xim);
+	if (thiz->xim)
+		ecore_x_image_free(thiz->xim);
 }
 
 static Efl_Egueb_Window_Descriptor _descriptor = {
