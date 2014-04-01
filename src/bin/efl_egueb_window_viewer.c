@@ -92,10 +92,6 @@ int main(int argc, char *argv[])
 		help(argv[0]);
 		return 0;
 	}
-	/* FIXME for now we do like this to create a new doc, later
-	 * we need to create a doc based on the mime type, using the
-	 * dom implementation
-	 */
 	egueb_dom_parser_parse(s, &doc);
 	enesim_stream_unref(s);
 
