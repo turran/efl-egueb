@@ -61,8 +61,12 @@ static Eina_Bool _efl_egueb_window_mouse_button_down(void *data,
 		int type, void *event)
 {
 	Efl_Egueb_Window *thiz = data;
+	Ecore_Event_Mouse_Button *ev = event;
 
-	printf("mouse button down\n");
+	if (!_check_window(thiz, ev->window))
+		return EINA_TRUE;
+
+	if (thiz->ui) egueb_dom_feature_ui_feed_mouse_down(thiz->ui, ev->buttons);
 	return EINA_TRUE;
 }
 
@@ -70,8 +74,12 @@ static Eina_Bool _efl_egueb_window_mouse_button_up(void *data,
 		int type, void *event)
 {
 	Efl_Egueb_Window *thiz = data;
+	Ecore_Event_Mouse_Button *ev = event;
 
-	printf("mouse button up\n");
+	if (!_check_window(thiz, ev->window))
+		return EINA_TRUE;
+
+	if (thiz->ui) egueb_dom_feature_ui_feed_mouse_up(thiz->ui, ev->buttons);
 	return EINA_TRUE;
 }
 
@@ -180,7 +188,6 @@ Efl_Egueb_Window * efl_egueb_window_new(Egueb_Dom_Node *doc,
 	Efl_Egueb_Window *thiz;
 	Egueb_Dom_Feature *render;
 	Egueb_Dom_Feature *window;
-	Egueb_Dom_Node *io;
 	int cw, ch;
 
 	if (!doc) return NULL;
