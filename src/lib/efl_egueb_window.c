@@ -100,8 +100,23 @@ static Eina_Bool _efl_egueb_window_mouse_wheel(void *data,
 		int type, void *event)
 {
 	Efl_Egueb_Window *thiz = data;
+	Ecore_Event_Mouse_Wheel *ev = event;
+	int deltax = 0, deltay = 0, deltaz = 0;
 
-	printf("mouse wheel\n");
+	if (!_check_window(thiz, ev->window))
+		return EINA_TRUE;
+	switch (ev->direction)
+	{
+		/* up/down */
+		case 0:
+		deltay = ev->z;
+		break;
+
+		default:
+		ERR("Unsupported direction");
+		break;
+	}
+	if (thiz->ui) egueb_dom_feature_ui_feed_mouse_wheel(thiz->ui, deltax, deltay, deltaz);
 	return EINA_TRUE;
 }
 
