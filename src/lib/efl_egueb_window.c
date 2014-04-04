@@ -66,7 +66,7 @@ static Eina_Bool _efl_egueb_window_mouse_button_down(void *data,
 	if (!_check_window(thiz, ev->window))
 		return EINA_TRUE;
 
-	if (thiz->ui) egueb_dom_feature_ui_feed_mouse_down(thiz->ui, ev->buttons);
+	if (thiz->input) egueb_dom_input_feed_mouse_down(thiz->input, ev->buttons);
 	return EINA_TRUE;
 }
 
@@ -79,7 +79,7 @@ static Eina_Bool _efl_egueb_window_mouse_button_up(void *data,
 	if (!_check_window(thiz, ev->window))
 		return EINA_TRUE;
 
-	if (thiz->ui) egueb_dom_feature_ui_feed_mouse_up(thiz->ui, ev->buttons);
+	if (thiz->input) egueb_dom_input_feed_mouse_up(thiz->input, ev->buttons);
 	return EINA_TRUE;
 }
 
@@ -92,7 +92,7 @@ static Eina_Bool _efl_egueb_window_mouse_move(void *data,
 	if (!_check_window(thiz, ev->window))
 		return EINA_TRUE;
 
-	if (thiz->ui) egueb_dom_feature_ui_feed_mouse_move(thiz->ui, ev->x, ev->y);
+	if (thiz->input) egueb_dom_input_feed_mouse_move(thiz->input, ev->x, ev->y);
 	return EINA_TRUE;
 }
 
@@ -116,7 +116,7 @@ static Eina_Bool _efl_egueb_window_mouse_wheel(void *data,
 		ERR("Unsupported direction");
 		break;
 	}
-	if (thiz->ui) egueb_dom_feature_ui_feed_mouse_wheel(thiz->ui, deltax, deltay, deltaz);
+	if (thiz->input) egueb_dom_input_feed_mouse_wheel(thiz->input, deltax, deltay, deltaz);
 	return EINA_TRUE;
 }
 
@@ -203,6 +203,7 @@ Efl_Egueb_Window * efl_egueb_window_new(Egueb_Dom_Node *doc,
 	Efl_Egueb_Window *thiz;
 	Egueb_Dom_Feature *render;
 	Egueb_Dom_Feature *window;
+	Egueb_Dom_Feature *ui;
 	int cw, ch;
 
 	if (!doc) return NULL;
@@ -263,8 +264,13 @@ Efl_Egueb_Window * efl_egueb_window_new(Egueb_Dom_Node *doc,
 	thiz->y = y;
 
 	/* optional features */
-	thiz->ui = egueb_dom_node_feature_get(thiz->doc,
+	ui = egueb_dom_node_feature_get(thiz->doc,
 			EGUEB_DOM_FEATURE_UI_NAME, NULL);
+	if (ui)
+	{
+		egueb_dom_feature_ui_input_get(ui, &thiz->input);
+		egueb_dom_feature_unref(ui);
+	}
 	/* register our own idler */
 	thiz->idle_enterer = ecore_idle_enterer_add(_efl_egueb_window_idle_enterer_cb, thiz);
 	/* register the event handlers */
@@ -313,8 +319,8 @@ EAPI void efl_egueb_window_free(Efl_Egueb_Window *thiz)
 	if (thiz->idle_enterer)
 		ecore_idle_enterer_del(thiz->idle_enterer);
 
-	if (thiz->ui)
-		egueb_dom_feature_unref(thiz->ui);
+	if (thiz->input)
+		egueb_dom_input_unref(thiz->input);
 	if (thiz->window)
 		egueb_dom_feature_unref(thiz->window);
 	if (thiz->render)

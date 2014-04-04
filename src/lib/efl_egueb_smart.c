@@ -67,7 +67,7 @@ typedef struct _Efl_Egueb_Smart
 	Egueb_Dom_Feature *render;
 	Egueb_Dom_Feature *window;
 	Egueb_Dom_Feature *animation;
-	Egueb_Dom_Feature *ui;
+	Egueb_Dom_Input *input;
 
 	Ecore_Idle_Enterer *idler;
 
@@ -190,8 +190,8 @@ static void _efl_egueb_smart_mouse_up(void *data, Evas *e EINA_UNUSED, Evas_Obje
 	Efl_Egueb_Smart *thiz = (Efl_Egueb_Smart *)data;
 /* 	Evas_Event_Mouse_Up *ev = event_info; */
 
-	if (thiz->ui)
-		egueb_dom_feature_ui_feed_mouse_up(thiz->ui, 0);
+	if (thiz->input)
+		egueb_dom_input_feed_mouse_up(thiz->input, 0);
 	thiz->down = EINA_FALSE;
 }
 
@@ -201,8 +201,8 @@ static void _efl_egueb_smart_mouse_down(void *data, Evas *e EINA_UNUSED, Evas_Ob
  	Evas_Event_Mouse_Down *ev = event_info;
 	Evas_Coord ix, iy;
 
-	if (thiz->ui)
-		egueb_dom_feature_ui_feed_mouse_down(thiz->ui, 0);
+	if (thiz->input)
+		egueb_dom_input_feed_mouse_down(thiz->input, 0);
 
 	thiz->down = EINA_TRUE;
 	evas_object_geometry_get(thiz->img, &ix, &iy, NULL, NULL);
@@ -235,8 +235,8 @@ static void _efl_egueb_smart_mouse_move(void *data, Evas *e EINA_UNUSED, Evas_Ob
 	evas_object_geometry_get(thiz->img, &ix, &iy, NULL, NULL);
 	svgx = ev->cur.canvas.x - ix;
 	svgy = ev->cur.canvas.y - iy;
-	if (thiz->ui)
-		egueb_dom_feature_ui_feed_mouse_move(thiz->ui, svgx, svgy);
+	if (thiz->input)
+		egueb_dom_input_feed_mouse_move(thiz->input, svgx, svgy);
 }
 
 static void _efl_egueb_smart_reconfigure(Efl_Egueb_Smart *thiz)
@@ -427,8 +427,8 @@ static Eina_Bool _efl_egueb_smart_idler_cb(void *data)
 		/* feed a mouse move event to inform our current cursor position */
 		evas_object_geometry_get(thiz->img, &ix, &iy, NULL, NULL);
 		evas_pointer_canvas_xy_get(thiz->evas, &x, &y);
-		if (thiz->ui)
-			egueb_dom_feature_ui_feed_mouse_move(thiz->ui, x - ix, y - iy);
+		if (thiz->input)
+			egueb_dom_input_feed_mouse_move(thiz->input, x - ix, y - iy);
 	}
 
 	/* check if the size has changed, if so, create a new surface */
@@ -487,6 +487,8 @@ done:
 
 static void _efl_egueb_smart_setup(Efl_Egueb_Smart *thiz, Egueb_Dom_Node *doc)
 {
+	Egueb_Dom_Feature *ui;
+
 	thiz->doc = doc;
 	efl_egueb_document_setup(&thiz->edoc, egueb_dom_node_ref(thiz->doc));
 	/* get the features */
@@ -510,8 +512,13 @@ static void _efl_egueb_smart_setup(Efl_Egueb_Smart *thiz, Egueb_Dom_Node *doc)
 		return;
 	}
 
-	thiz->ui = egueb_dom_node_feature_get(thiz->doc,
+	ui = egueb_dom_node_feature_get(thiz->doc,
 			EGUEB_DOM_FEATURE_UI_NAME, NULL);
+	if (ui)
+	{
+		egueb_dom_feature_ui_input_get(ui, &thiz->input);
+		egueb_dom_feature_unref(ui);
+	}
 }
 
 static void _efl_egueb_smart_cleanup(Efl_Egueb_Smart *thiz)
@@ -525,6 +532,12 @@ static void _efl_egueb_smart_cleanup(Efl_Egueb_Smart *thiz)
 	{
 		free(thiz->base_dir);
 		thiz->base_dir = NULL;
+	}
+
+	if (thiz->input)
+	{
+		egueb_dom_input_unref(thiz->input);
+		thiz->input = NULL;
 	}
 
 	if (thiz->render)
@@ -542,12 +555,6 @@ static void _efl_egueb_smart_cleanup(Efl_Egueb_Smart *thiz)
 	if (thiz->animation)
 	{
 		egueb_dom_feature_unref(thiz->animation);
-		thiz->animation = NULL;
-	}
-
-	if (thiz->ui)
-	{
-		egueb_dom_feature_unref(thiz->ui);
 		thiz->animation = NULL;
 	}
 
