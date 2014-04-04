@@ -2,13 +2,13 @@ collections {
 	group { name: "main";
 
 		externals {
-			external: "svg";
+			external: "egueb";
 		}
 
 		parts {
 			part { name: "anim_svg_example";
 				type: EXTERNAL;
-				source: "svg";
+				source: "egueb";
 				description { state: "default" 0.0;
 					params {
 						string: "file" "@PACKAGE_DATA_DIR@/example01.svg";
