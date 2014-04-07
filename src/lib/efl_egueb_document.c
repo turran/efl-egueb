@@ -30,6 +30,47 @@
 /*============================================================================*
  *                                  Local                                     *
  *============================================================================*/
+typedef struct _Efl_Egueb_Document_Http_Request
+{
+	Ecore_Con_Url *conn;
+	Eina_Binbuf *data;
+	Egueb_Dom_Event_IO_Data_Cb cb;
+	Egueb_Dom_Node *node;
+} Efl_Egueb_Document_Http_Request;
+
+static Eina_Bool _efl_egueb_document_url_data_cb(void *data, int type, void *event)
+{
+	Ecore_Con_Event_Url_Data *ev = event;
+	Efl_Egueb_Document_Http_Request *d = data;
+
+	if (ev->url_con != d->conn)
+		return EINA_TRUE;
+	if (ev->size > 0)
+		eina_binbuf_append_length(d->data, ev->data, ev->size);
+
+	return EINA_TRUE;
+}
+
+static Eina_Bool _efl_egueb_document_url_completion_cb(void *data, int type, void *event)
+{
+	Ecore_Con_Event_Url_Complete *ev = event;
+	Efl_Egueb_Document_Http_Request *d = data;
+	Enesim_Stream *s;
+
+	if (ev->url_con != d->conn)
+		return EINA_TRUE;
+
+	s = enesim_stream_buffer_new(eina_binbuf_string_steal(d->data),
+			eina_binbuf_length_get(d->data));
+	d->cb(d->node, s);
+
+	egueb_dom_node_unref(d->node);
+	eina_binbuf_free(d->data);
+	free(d);
+
+	return EINA_TRUE;
+}
+
 static void _efl_egueb_document_io_data_load(Egueb_Dom_String *location,
 		Egueb_Dom_Event_IO_Data_Cb cb, Egueb_Dom_Node *node)
 {
@@ -47,6 +88,25 @@ static void _efl_egueb_document_io_data_load(Egueb_Dom_String *location,
 			DBG("Data '%s' loaded correctly", filename);
 			cb(node, s);
 		}
+	}
+	else if (!strncmp(filename, "http://", 7))
+	{
+		Efl_Egueb_Document_Http_Request *data;
+		Ecore_Con_Url *url;
+
+		data = calloc(1, sizeof(Efl_Egueb_Document_Http_Request));
+		data->conn = ecore_con_url_new(filename);
+		data->data = eina_binbuf_new();
+		data->node = egueb_dom_node_ref(node);
+		data->cb = cb;
+
+		ecore_event_handler_add(ECORE_CON_EVENT_URL_COMPLETE,
+				_efl_egueb_document_url_completion_cb,
+				data);
+		ecore_event_handler_add(ECORE_CON_EVENT_URL_DATA,
+				_efl_egueb_document_url_data_cb,
+				data);
+		ecore_con_url_get(data->conn);
 	}
 	else
 	{
@@ -207,6 +267,8 @@ void efl_egueb_document_setup(Efl_Egueb_Document *thiz, Egueb_Dom_Node *doc)
 				_efl_egueb_document_io_image_cb, EINA_TRUE, thiz);
 		thiz->idle_enterer = ecore_idle_enterer_add(
 				_efl_egueb_document_idle_enterer_cb, thiz);
+		ecore_con_init();
+		ecore_con_url_init();
 	}
 
 	/* check for animation feature */
@@ -236,6 +298,8 @@ void efl_egueb_document_cleanup(Efl_Egueb_Document *thiz)
 				_efl_egueb_document_io_image_cb,
 				EINA_TRUE, thiz);
 		egueb_dom_feature_unref(thiz->io);
+		ecore_con_url_shutdown();
+		ecore_con_shutdown();
 	}
 	if (thiz->doc)
 	{

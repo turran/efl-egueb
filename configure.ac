@@ -52,7 +52,7 @@ fi
 
 ### Checks for libraries
 
-requirements_pc="egueb-dom >= 0.0.23 enesim >= 0.0.15 ecore >= 1.2.0 evas >= 1.2.0 eina >= 1.2.0"
+requirements_pc="egueb-dom >= 0.0.23 enesim >= 0.0.15 ecore >= 1.2.0 ecore-con >= 1.2.0 evas >= 1.2.0 eina >= 1.2.0"
 PKG_CHECK_EXISTS([evas-opengl-x11 >= 1.2.0 enesim_opengl >= 0.0.15],
    [
     have_gl="yes"

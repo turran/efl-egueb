@@ -34,6 +34,7 @@ extern int efl_egueb_log;
 
 #include <Evas.h>
 #include <Ecore.h>
+#include <Ecore_Con.h>
 
 #include <Egueb_Dom.h>
 
