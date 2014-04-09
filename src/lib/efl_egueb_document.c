@@ -34,8 +34,7 @@ typedef struct _Efl_Egueb_Document_Http_Request
 {
 	Ecore_Con_Url *conn;
 	Eina_Binbuf *data;
-	Egueb_Dom_Event_IO_Data_Cb cb;
-	Egueb_Dom_Node *node;
+	Egueb_Dom_Event *ev;
 } Efl_Egueb_Document_Http_Request;
 
 static Eina_Bool _efl_egueb_document_url_data_cb(void *data, int type, void *event)
@@ -62,9 +61,9 @@ static Eina_Bool _efl_egueb_document_url_completion_cb(void *data, int type, voi
 
 	s = enesim_stream_buffer_new(eina_binbuf_string_steal(d->data),
 			eina_binbuf_length_get(d->data));
-	d->cb(d->node, s);
+	egueb_dom_event_io_data_finish(d->ev, s);
 
-	egueb_dom_node_unref(d->node);
+	egueb_dom_event_unref(d->ev);
 	eina_binbuf_free(d->data);
 	free(d);
 
@@ -72,7 +71,7 @@ static Eina_Bool _efl_egueb_document_url_completion_cb(void *data, int type, voi
 }
 
 static void _efl_egueb_document_io_data_load(Egueb_Dom_String *location,
-		Egueb_Dom_Event_IO_Data_Cb cb, Egueb_Dom_Node *node)
+		Egueb_Dom_Event *ev)
 {
 	const char *filename;
 
@@ -86,19 +85,17 @@ static void _efl_egueb_document_io_data_load(Egueb_Dom_String *location,
 		if (s)
 		{
 			DBG("Data '%s' loaded correctly", filename);
-			cb(node, s);
+			egueb_dom_event_io_data_finish(ev, s);
 		}
 	}
 	else if (!strncmp(filename, "http://", 7))
 	{
 		Efl_Egueb_Document_Http_Request *data;
-		Ecore_Con_Url *url;
 
 		data = calloc(1, sizeof(Efl_Egueb_Document_Http_Request));
 		data->conn = ecore_con_url_new(filename);
 		data->data = eina_binbuf_new();
-		data->node = egueb_dom_node_ref(node);
-		data->cb = cb;
+		data->ev = egueb_dom_event_ref(ev);
 
 		ecore_event_handler_add(ECORE_CON_EVENT_URL_COMPLETE,
 				_efl_egueb_document_url_completion_cb,
@@ -120,7 +117,6 @@ static void _efl_egueb_document_io_relative_data_cb(Egueb_Dom_Uri *uri,
 	Egueb_Dom_Node *doc;
 	Egueb_Dom_Node *node;
 	Egueb_Dom_String *location;
-	Egueb_Dom_Event_IO_Data_Cb cb;
 	char *s_location;
 	char *filename;
 	char *dir;
@@ -155,8 +151,7 @@ static void _efl_egueb_document_io_relative_data_cb(Egueb_Dom_Uri *uri,
 		goto beach;
 
 	location = egueb_dom_string_steal(filename);
-	cb = egueb_dom_event_io_data_cb_get(ev);
-	_efl_egueb_document_io_data_load(location, cb, node);
+	_efl_egueb_document_io_data_load(location, ev);
 	egueb_dom_string_unref(location);
 beach:
 	egueb_dom_node_unref(node);
@@ -175,12 +170,7 @@ static void _efl_egueb_document_io_data_cb(Egueb_Dom_Event *ev, void *data EINA_
 			uri.location), uri.type);
 	if (uri.type == EGUEB_DOM_URI_TYPE_ABSOLUTE)
 	{
-		Egueb_Dom_Node *node;
-		Egueb_Dom_Event_IO_Data_Cb cb;
-
-		node = egueb_dom_event_target_get(ev);
-		cb = egueb_dom_event_io_data_cb_get(ev);
-		_efl_egueb_document_io_data_load(uri.location, cb, node);
+		_efl_egueb_document_io_data_load(uri.location, ev);
 	}
 	else
 	{
@@ -196,7 +186,6 @@ static void _efl_egueb_document_io_image_async_cb(Enesim_Buffer *b, void *data,
 {
 	Egueb_Dom_Event *ev = data;
 	Egueb_Dom_Node *n;
-	Egueb_Dom_Event_IO_Image_Cb cb;
 	Enesim_Surface *src = NULL;
 
 	n = egueb_dom_event_target_get(ev);
@@ -210,8 +199,7 @@ static void _efl_egueb_document_io_image_async_cb(Enesim_Buffer *b, void *data,
 		src = enesim_surface_new_buffer_from(b);
 	}
 
-	cb = egueb_dom_event_io_image_cb_get(ev);
-	cb(n, src);
+	egueb_dom_event_io_image_finish(ev, src);
 	egueb_dom_node_unref(n);
 }
 
