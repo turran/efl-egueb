@@ -4,10 +4,10 @@ libdir=@libdir@
 includedir=@includedir@
 pkgincludedir=@pkgincludedir@-@VMAJ@
 
-Name: @PACKAGE_NAME@
-Description: Esvg smart object
+Name: EFL Egueb
+Description: EFL Egueb bindings
 Version: @VERSION@
 Requires.private: @requirements_pc@
-Libs: -L${libdir} -lefl_svg
+Libs: -L${libdir} -lefl_egueb
 Libs.private:
 Cflags: -I${pkgincludedir}

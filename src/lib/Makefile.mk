@@ -4,6 +4,7 @@ lib_LTLIBRARIES = src/lib/libefl_egueb.la
 install_efl_egueb_headersdir = $(pkgincludedir)-@VMAJ@
 dist_install_efl_egueb_headers_DATA = \
 src/lib/Efl_Egueb.h \
+src/lib/efl_egueb_build.h \
 src/lib/efl_egueb_main.h \
 src/lib/efl_egueb_smart.h \
 src/lib/efl_egueb_window.h

@@ -36,7 +36,6 @@ int main(int argc, char *argv[])
 	int option;
 	int ret;
 	const char *filename;
-	char *engine;
 	int width;
 	int height;
 	int fps;

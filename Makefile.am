@@ -41,7 +41,7 @@ AUTHORS \
 COPYING \
 README \
 autogen.sh\
-efl_svg.pc.in \
+efl-egueb.pc.in \
 m4/efl_compiler.m4
 
 sed_process = \
@@ -60,9 +60,9 @@ pc_verbose = $(pc_verbose_@AM_V@)
 pc_verbose_ = $(pc_verbose_@AM_DEFAULT_V@)
 pc_verbose_0 = @echo "  PC      " $@;
 
-efl_svg.pc: $(top_srcdir)/efl_svg.pc.in Makefile
+efl-egueb.pc: $(top_srcdir)/efl-egueb.pc.in Makefile
 	@rm -f $@
 	$(pc_verbose)$(sed_process)
 
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = efl_svg.pc
+pkgconfig_DATA = efl-egueb.pc
