@@ -65,6 +65,7 @@ static Eina_Bool _efl_egueb_document_url_completion_cb(void *data, int type, voi
 
 	egueb_dom_event_unref(d->ev);
 	eina_binbuf_free(d->data);
+	ecore_con_url_free(d->conn);
 	free(d);
 
 	return EINA_TRUE;
