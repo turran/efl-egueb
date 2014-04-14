@@ -310,6 +310,8 @@ EAPI Efl_Egueb_Window * efl_egueb_window_auto_new(Egueb_Dom_Node *doc,
 
 EAPI void efl_egueb_window_free(Efl_Egueb_Window *thiz)
 {
+	if (!thiz) return;
+
 	efl_egueb_document_cleanup(&thiz->edoc);
 	if (thiz->b)
 		enesim_buffer_unref(thiz->b);
