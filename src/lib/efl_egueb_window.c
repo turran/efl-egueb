@@ -149,6 +149,7 @@ static Eina_Bool _efl_egueb_window_damages(Egueb_Dom_Feature *e EINA_UNUSED,
 	r = malloc(sizeof(Eina_Rectangle));
 	*r = *area;
 
+	DBG("Adding damage area of %" EINA_RECTANGLE_FORMAT, EINA_RECTANGLE_ARGS(area));
 	thiz->damages = eina_list_append(thiz->damages, r);
 	return EINA_TRUE;
 }
