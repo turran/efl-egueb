@@ -221,8 +221,16 @@ static void _efl_egueb_document_io_image_cb(Egueb_Dom_Event *ev, void *data EINA
 static void _efl_egueb_document_script_scripter_cb(Egueb_Dom_Event *ev, void *data)
 {
 	Efl_Egueb_Document *thiz = data;
+	Egueb_Dom_String *type;
+	const char *stype;
 	//Egueb_Dom_Scripter *scripter;
 
+	type = egueb_dom_event_script_type_get(ev);
+	stype = egueb_dom_string_string_get(type);
+#if BUILD_EGUEB_JS_SM
+#endif
+	
+	egueb_dom_string_unref(type);
 	/* TODO check if there's a scripter set on the event already,
 	 * if so, do not do nothing, otherwise, check for the
 	 * internal hash of scripters
