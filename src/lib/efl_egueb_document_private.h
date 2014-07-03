@@ -23,6 +23,7 @@ typedef struct _Efl_Egueb_Document
 	Egueb_Dom_Node *doc;
 	Egueb_Dom_Feature *io;
 	Egueb_Dom_Feature *animation;
+	Egueb_Dom_Feature *script;
 
 	Ecore_Timer *animator;
 	Ecore_Idle_Enterer *idle_enterer;

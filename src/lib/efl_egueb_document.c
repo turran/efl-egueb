@@ -37,7 +37,7 @@ typedef struct _Efl_Egueb_Document_Http_Request
 	Egueb_Dom_Event *ev;
 } Efl_Egueb_Document_Http_Request;
 
-static Eina_Bool _efl_egueb_document_url_data_cb(void *data, int type, void *event)
+static Eina_Bool _efl_egueb_document_url_data_cb(void *data, int type EINA_UNUSED, void *event)
 {
 	Ecore_Con_Event_Url_Data *ev = event;
 	Efl_Egueb_Document_Http_Request *d = data;
@@ -50,7 +50,7 @@ static Eina_Bool _efl_egueb_document_url_data_cb(void *data, int type, void *eve
 	return EINA_TRUE;
 }
 
-static Eina_Bool _efl_egueb_document_url_completion_cb(void *data, int type, void *event)
+static Eina_Bool _efl_egueb_document_url_completion_cb(void *data, int type EINA_UNUSED, void *event)
 {
 	Ecore_Con_Event_Url_Complete *ev = event;
 	Efl_Egueb_Document_Http_Request *d = data;
@@ -218,6 +218,18 @@ static void _efl_egueb_document_io_image_cb(Egueb_Dom_Event *ev, void *data EINA
 	enesim_stream_unref(s);
 }
 
+static void _efl_egueb_document_script_scripter_cb(Egueb_Dom_Event *ev, void *data)
+{
+	Efl_Egueb_Document *thiz = data;
+	//Egueb_Dom_Scripter *scripter;
+
+	/* TODO check if there's a scripter set on the event already,
+	 * if so, do not do nothing, otherwise, check for the
+	 * internal hash of scripters
+	 */
+}
+
+
 static Eina_Bool _efl_egueb_document_timer_cb(void *data)
 {
 	Efl_Egueb_Document *thiz = data;
@@ -272,10 +284,24 @@ void efl_egueb_document_setup(Efl_Egueb_Document *thiz, Egueb_Dom_Node *doc)
 		if (fps > 0)
 			thiz->animator = ecore_timer_add(1.0/fps, _efl_egueb_document_timer_cb, thiz);
 	}
+
+	/* check for the script feature */
+	thiz->script = egueb_dom_node_feature_get(doc, EGUEB_DOM_FEATURE_SCRIPT_NAME, NULL);
+	if (thiz->script)
+	{
+		egueb_dom_node_event_listener_add(thiz->doc,
+				EGUEB_DOM_EVENT_SCRIPT_SCRIPTER,
+				_efl_egueb_document_script_scripter_cb, EINA_TRUE, thiz);
+	}
 }
 
 void efl_egueb_document_cleanup(Efl_Egueb_Document *thiz)
 {
+	if (thiz->script)
+	{
+		egueb_dom_feature_unref(thiz->script);
+	}
+
 	if (thiz->io)
 	{
 		egueb_dom_node_event_listener_remove(thiz->doc,

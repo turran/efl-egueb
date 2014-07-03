@@ -100,6 +100,30 @@ fi
 AM_CONDITIONAL([BUILD_ECORE_X], [test "x${build_ecore_x}" = "xyes"])
 
 
+AC_ARG_ENABLE([egueb-js-sm], [AS_HELP_STRING([--enable-egueb-js-sm], [Enable Ecore X window])],
+  [
+    if test "x$enableval" = "xyes" ; then
+       want_egueb_js_sm="yes"
+    else
+       want_egueb_js_sm="no"
+    fi
+  ],
+  [want_egueb_js_sm="yes"]
+)
+
+PKG_CHECK_MODULES([EGUEB_JS_SM], [egueb-js-sm], [have_egueb_js_sm="yes"], [have_egueb_js_sm="no"])
+build_egueb_js_sm="no"
+
+if test "x${have_egueb_js_sm}" = "xyes" -a "x${want_egueb_js_sm}" = "xyes"; then
+  build_egueb_js_sm="yes"
+  requirements_pc="${requirements_pc} egueb-js-sm"
+fi
+
+if test "x${build_egueb_js_sm}" = "xyes"; then
+  AC_DEFINE([BUILD_EGUEB_JS_SM], [1], [Have support for egueb_js_sm])
+fi
+AM_CONDITIONAL([BUILD_EGUEB_JS_SM], [test "x${build_egueb_js_sm}" = "xyes"])
+
 ### Checks for header files
 
 
@@ -144,6 +168,8 @@ echo "  OpenGL support............................: ${have_gl}"
 echo "  Edje external support.....................: ${build_edje_external}"
 echo "  Window support:"
 echo "    Ecore X.................................: ${build_ecore_x}"
+echo "  Scripting support:"
+echo "    JavaScript (SpiderMonkey)...............: ${build_egueb_js_sm}"
 echo
 echo "Compilation.................................: make (or gmake)"
 echo "  CPPFLAGS..................................: $CPPFLAGS"
