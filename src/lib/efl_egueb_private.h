@@ -22,6 +22,10 @@
 # include <config.h>
 #endif
 
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+
 #include "efl_egueb_build.h"
 
 #define CRI(...) EINA_LOG_DOM_CRIT(efl_egueb_log, __VA_ARGS__)
