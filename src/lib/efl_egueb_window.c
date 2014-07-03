@@ -210,7 +210,7 @@ Efl_Egueb_Window * efl_egueb_window_new(Egueb_Dom_Node *doc,
 	if (!doc) return NULL;
 
 	/* check if it is a doc */
-	if (egueb_dom_node_type_get(doc) != EGUEB_DOM_NODE_TYPE_DOCUMENT_NODE)
+	if (egueb_dom_node_type_get(doc) != EGUEB_DOM_NODE_TYPE_DOCUMENT)
 	{
 		egueb_dom_node_unref(doc);
 		return NULL;
