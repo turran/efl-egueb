@@ -20,6 +20,10 @@
 
 #include "efl_egueb_document_private.h"
 
+#if BUILD_EGUEB_JS_SM
+#include <Egueb_Js_Sm.h>
+#endif
+
 #include <libgen.h>
 #include <stdio.h>
 /* Put the common interfaces with EFL here, like:
@@ -221,20 +225,38 @@ static void _efl_egueb_document_io_image_cb(Egueb_Dom_Event *ev, void *data EINA
 static void _efl_egueb_document_script_scripter_cb(Egueb_Dom_Event *ev, void *data)
 {
 	Efl_Egueb_Document *thiz = data;
+	Egueb_Dom_Scripter *scripter;
 	Egueb_Dom_String *type;
 	const char *stype;
-	//Egueb_Dom_Scripter *scripter;
 
+	/* in case the application has set an scripter, just skip */
+	scripter = egueb_dom_event_script_scripter_get(ev);
+	if (scripter)
+		return;
+
+	/* check for our own scripters */
 	type = egueb_dom_event_script_type_get(ev);
 	stype = egueb_dom_string_string_get(type);
+	scripter = eina_hash_find(thiz->scripters, stype);
+	if (scripter)
+	{
+		egueb_dom_event_script_scripter_set(ev, scripter);
+		goto done;
+	}
+
 #if BUILD_EGUEB_JS_SM
+	if (!strcmp(stype, "application/ecmascript"))
+	{
+		scripter = egueb_js_sm_scripter_new();
+	}
 #endif
-	
+	if (scripter)
+	{
+		eina_hash_add(thiz->scripters, stype, scripter);
+		egueb_dom_event_script_scripter_set(ev, scripter);
+	}
+done:
 	egueb_dom_string_unref(type);
-	/* TODO check if there's a scripter set on the event already,
-	 * if so, do not do nothing, otherwise, check for the
-	 * internal hash of scripters
-	 */
 }
 
 
@@ -300,6 +322,7 @@ void efl_egueb_document_setup(Efl_Egueb_Document *thiz, Egueb_Dom_Node *doc)
 		egueb_dom_node_event_listener_add(thiz->doc,
 				EGUEB_DOM_EVENT_SCRIPT_SCRIPTER,
 				_efl_egueb_document_script_scripter_cb, EINA_TRUE, thiz);
+		thiz->scripters = eina_hash_string_superfast_new(NULL);
 	}
 }
 
@@ -307,6 +330,7 @@ void efl_egueb_document_cleanup(Efl_Egueb_Document *thiz)
 {
 	if (thiz->script)
 	{
+		eina_hash_free(thiz->scripters);
 		egueb_dom_feature_unref(thiz->script);
 	}
 
