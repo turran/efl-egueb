@@ -17,6 +17,10 @@
  */
 #include "efl_egueb_private.h"
 #include "efl_egueb_main.h"
+
+#if BUILD_EGUEB_JS_SM
+#include <Egueb_Js_Sm.h>
+#endif
 /*============================================================================*
  *                                  Local                                     *
  *============================================================================*/
@@ -33,6 +37,9 @@ EAPI int efl_egueb_init(void)
 	if (++_init != 1)
 		return _init;
 	egueb_dom_init();
+#if BUILD_EGUEB_JS_SM
+	egueb_js_sm_init();
+#endif
 	efl_egueb_log = eina_log_domain_register("efl_egueb", EINA_COLOR_BLUE);
 	return _init;
 }
@@ -42,6 +49,9 @@ EAPI int efl_egueb_shutdown(void)
 	if (--_init != 0)
 		return _init;
 	eina_log_domain_unregister(efl_egueb_log);
+#if BUILD_EGUEB_JS_SM
+	egueb_js_sm_shutdown();
+#endif
 	egueb_dom_shutdown();
 	return _init;
 }
