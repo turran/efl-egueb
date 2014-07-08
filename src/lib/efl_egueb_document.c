@@ -253,6 +253,7 @@ static void _efl_egueb_document_script_scripter_cb(Egueb_Dom_Event *ev, void *da
 	if (scripter)
 	{
 		eina_hash_add(thiz->scripters, stype, scripter);
+		/* TODO add any global object we might need, like the window object? */
 		egueb_dom_event_script_scripter_set(ev, scripter);
 	}
 done:
@@ -322,7 +323,7 @@ void efl_egueb_document_setup(Efl_Egueb_Document *thiz, Egueb_Dom_Node *doc)
 		egueb_dom_node_event_listener_add(thiz->doc,
 				EGUEB_DOM_EVENT_SCRIPT_SCRIPTER,
 				_efl_egueb_document_script_scripter_cb, EINA_TRUE, thiz);
-		thiz->scripters = eina_hash_string_superfast_new(NULL);
+		thiz->scripters = eina_hash_string_superfast_new(EINA_FREE_CB(egueb_dom_scripter_free));
 	}
 }
 
