@@ -1,7 +1,6 @@
 What is it
 ==========
-EFL-Egueb is a library that provides a set of useful APIs for easy integration of Egueb on [EFL](http://www.enlightenment.org)
-
+EFL-Egueb is a library that provides a set of useful APIs for easy integration of Egueb on [EFL](http://www.enlightenment.org).
 The main abstractions provided are:
 
 + `Efl_Egueb_Window`: `Ecore_Evas` alike window object. It allows you to create a window for displaying any `Egueb` based document.
@@ -11,15 +10,11 @@ Features
 ========
 Scripting
 ---------
-Documents that require scripting, either by `<script>` tag or by listeners like `onclick`, `onmouseover`, etc; are handled
-
-Currently JavaScript support is provided by using [egueb-js-sm](https://www.github.com/turran/egueb-js-sm)
+Documents that require scripting, either by `<script>` tag or by listeners like `onclick`, `onmouseover`, etc; are supported. Currently JavaScript support is provided by using [egueb-js-sm](https://www.github.com/turran/egueb-js-sm)
   
 Input/Output
 ------------
-Image loading is done through `Enesim` asynchronous API
-
-File handling is done by using `Ecore_Con` for `http://` URIs, asynchronous too.
+Image loading is done through `Enesim` asynchronous API. File handling with `http://` URis scheme is done by using `Ecore_Con`.
 
 Animation
 ---------
