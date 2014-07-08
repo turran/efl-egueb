@@ -26,4 +26,4 @@ SMIL animations are handled by using an `Ecore_Timer` for the SMIL timeline.
 User input
 ----------
 All UI events are handled or either by using the underlying Window System Ecore abstraction (`Ecore_X`, `Ecore_SDL`, ...) for the
-`Efl_Egueb_Window` API. Or by using the `Evas` events for the `Efl_Egueb_Smart` object.
+`Efl_Egueb_Window` abstraction; or by using the `Evas` events for the `Efl_Egueb_Smart` abstraction.
