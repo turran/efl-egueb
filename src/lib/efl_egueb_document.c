@@ -237,6 +237,14 @@ static void _efl_egueb_document_script_scripter_cb(Egueb_Dom_Event *ev, void *da
 	/* check for our own scripters */
 	type = egueb_dom_event_script_type_get(ev);
 	stype = egueb_dom_string_string_get(type);
+
+	DBG("Requesting a script for '%s'", stype);
+	/* normalize the type */
+	if (!strcmp(stype, "application/ecmascript") ||
+			!strcmp(stype, "text/ecmascript") ||
+			!strcmp(stype, "text/javascript"))
+		stype = "application/ecmascript";
+
 	scripter = eina_hash_find(thiz->scripters, stype);
 	if (scripter)
 	{
@@ -247,11 +255,13 @@ static void _efl_egueb_document_script_scripter_cb(Egueb_Dom_Event *ev, void *da
 #if BUILD_EGUEB_JS_SM
 	if (!strcmp(stype, "application/ecmascript"))
 	{
+		DBG("Creating new scripter for '%s'", stype);
 		scripter = egueb_js_sm_scripter_new();
 	}
 #endif
 	if (scripter)
 	{
+		DBG("Registering scripter for '%s'", stype);
 		eina_hash_add(thiz->scripters, stype, scripter);
 		/* TODO add any global object we might need, like the window object? */
 		egueb_dom_event_script_scripter_set(ev, scripter);
@@ -329,10 +339,21 @@ void efl_egueb_document_setup(Efl_Egueb_Document *thiz, Egueb_Dom_Node *doc)
 
 void efl_egueb_document_cleanup(Efl_Egueb_Document *thiz)
 {
+	/* first remove every global object to release any
+	 * reference that blocks the destruction of the document
+	 * like a reference to the document itself
+	 */
 	if (thiz->script)
 	{
-		eina_hash_free(thiz->scripters);
-		egueb_dom_feature_unref(thiz->script);
+		Eina_Iterator *it;
+		Egueb_Dom_Scripter *scripter;
+
+		it = eina_hash_iterator_data_new(thiz->scripters);
+		EINA_ITERATOR_FOREACH(it, scripter)
+		{
+			egueb_dom_scripter_global_clear(scripter);
+		}
+		eina_iterator_free(it);
 	}
 
 	if (thiz->io)
@@ -359,6 +380,11 @@ void efl_egueb_document_cleanup(Efl_Egueb_Document *thiz)
 		ecore_timer_del(thiz->animator);
 	if (thiz->animation)
 		egueb_dom_feature_unref(thiz->animation);
+	if (thiz->script)
+	{
+		eina_hash_free(thiz->scripters);
+		egueb_dom_feature_unref(thiz->script);
+	}
 }
 
 void efl_egueb_document_fps_set(Efl_Egueb_Document *thiz, int fps)
