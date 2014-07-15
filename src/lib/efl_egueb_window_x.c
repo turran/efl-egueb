@@ -141,28 +141,28 @@ static Eina_Bool _efl_egueb_window_x_buffer_update(Efl_Egueb_Window_X *thiz, int
 static Eina_Bool _efl_egueb_window_x_event_mouse_in(void *data,
 		int type, void *event)
 {
-	printf("mouse in\n");
+	//printf("mouse in\n");
 	return EINA_TRUE;
 }
 
 static Eina_Bool _efl_egueb_window_x_event_mouse_out(void *data,
 		int type, void *event)
 {
-	printf("mouse out\n");
+	//printf("mouse out\n");
 	return EINA_TRUE;
 }
 
 static Eina_Bool _efl_egueb_window_x_event_window_focus_in(void *data,
 		int type, void *event)
 {
-	printf("focus in\n");
+	//printf("focus in\n");
 	return EINA_TRUE;
 }
 
 static Eina_Bool _efl_egueb_window_x_event_window_focus_out(void *data,
 		int type, void *event)
 {
-	printf("focus out\n");
+	//printf("focus out\n");
 	return EINA_TRUE;
 }
 
@@ -183,7 +183,7 @@ static Eina_Bool _efl_egueb_window_x_event_window_damage(void *data,
 static Eina_Bool _efl_egueb_window_x_event_window_destroy(void *data,
 		int type, void *event)
 {
-	printf("destroy\n");
+	//printf("destroy\n");
 	return EINA_TRUE;
 }
 
@@ -196,7 +196,7 @@ static Eina_Bool _efl_egueb_window_x_event_window_configure(void *data,
 
 	if (thiz->win != ev->win) return EINA_TRUE;
 	
-	printf("configure wm: %d %d\n", ev->from_wm, ev->override);
+	//printf("configure wm: %d %d\n", ev->from_wm, ev->override);
 	/* check the size */
 	if (ev->w != base->w || ev->h != base->h)
 	{
@@ -209,7 +209,7 @@ static Eina_Bool _efl_egueb_window_x_event_window_configure(void *data,
 static Eina_Bool _efl_egueb_window_x_event_window_delete_request(void *data,
 		int type, void *event)
 {
-	printf("delete request\n");
+	//printf("delete request\n");
 	return EINA_TRUE;
 }
 
@@ -228,21 +228,21 @@ static Eina_Bool _efl_egueb_window_x_event_window_show(void *data,
 static Eina_Bool _efl_egueb_window_x_event_window_hide(void *data,
 		int type, void *event)
 {
-	printf("hide\n");
+	//printf("hide\n");
 	return EINA_TRUE;
 }
 
 static Eina_Bool _efl_egueb_window_x_event_property_change(void *data,
 		int type, void *event)
 {
-	printf("property change\n");
+	//printf("property change\n");
 	return EINA_TRUE;
 }
 
 static Eina_Bool _efl_egueb_window_x_event_visibility_change(void *data,
 		int type, void *event)
 {
-	printf("visibility change\n");
+	//printf("visibility change\n");
 	return EINA_TRUE;
 }
 
