@@ -99,8 +99,8 @@ if test "x${build_ecore_x}" = "xyes"; then
 fi
 AM_CONDITIONAL([BUILD_ECORE_X], [test "x${build_ecore_x}" = "xyes"])
 
-
-AC_ARG_ENABLE([egueb-js-sm], [AS_HELP_STRING([--enable-egueb-js-sm], [Enable Ecore X window])],
+### JavaScript (SpiderMonkey based) script support
+AC_ARG_ENABLE([egueb-js-sm], [AS_HELP_STRING([--enable-egueb-js-sm], [JavaScript (SpiderMonkey based) scripter])],
   [
     if test "x$enableval" = "xyes" ; then
        want_egueb_js_sm="yes"
@@ -123,6 +123,31 @@ if test "x${build_egueb_js_sm}" = "xyes"; then
   AC_DEFINE([BUILD_EGUEB_JS_SM], [1], [Have support for egueb_js_sm])
 fi
 AM_CONDITIONAL([BUILD_EGUEB_JS_SM], [test "x${build_egueb_js_sm}" = "xyes"])
+
+### GStreamer based video provider
+AC_ARG_ENABLE([gst-egueb], [AS_HELP_STRING([--enable-gst-egueb], [Enable GStreamer based video provider])],
+  [
+    if test "x$enableval" = "xyes" ; then
+       want_gst_egueb="yes"
+    else
+       want_gst_egueb="no"
+    fi
+  ],
+  [want_gst_egueb="yes"]
+)
+
+PKG_CHECK_MODULES([GST_EGUEB], [gst-egueb], [have_gst_egueb="yes"], [have_gst_egueb="no"])
+build_gst_egueb="no"
+
+if test "x${have_gst_egueb}" = "xyes" -a "x${want_gst_egueb}" = "xyes"; then
+  build_gst_egueb="yes"
+  requirements_pc="${requirements_pc} gst-egueb"
+fi
+
+if test "x${build_gst_egueb}" = "xyes"; then
+  AC_DEFINE([BUILD_GST_EGUEB], [1], [Have support for gst_egueb])
+fi
+AM_CONDITIONAL([BUILD_GST_EGUEB], [test "x${build_gst_egueb}" = "xyes"])
 
 ### Checks for header files
 
@@ -170,6 +195,8 @@ echo "  Window support:"
 echo "    Ecore X.................................: ${build_ecore_x}"
 echo "  Scripting support:"
 echo "    JavaScript (SpiderMonkey)...............: ${build_egueb_js_sm}"
+echo "  Video provider support:"
+echo "    GStreamer...............................: ${build_gst_egueb}"
 echo
 echo "Compilation.................................: make (or gmake)"
 echo "  CPPFLAGS..................................: $CPPFLAGS"

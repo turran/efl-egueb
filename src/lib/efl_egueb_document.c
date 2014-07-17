@@ -24,6 +24,10 @@
 #include <Egueb_Js_Sm.h>
 #endif
 
+#if BUILD_GST_EGUEB
+#include <Gst_Egueb.h>
+#endif
+
 #include <libgen.h>
 #include <stdio.h>
 /* Put the common interfaces with EFL here, like:
@@ -270,6 +274,21 @@ done:
 	egueb_dom_string_unref(type);
 }
 
+static void _efl_egueb_document_multimedia_video_cb(Egueb_Dom_Event *ev, void *data)
+{
+	Egueb_Dom_Video_Provider *vp = NULL;
+	Egueb_Dom_Node *n;
+	Enesim_Renderer *r;
+	const Egueb_Dom_Video_Provider_Notifier *notifier = NULL;
+
+	n = egueb_dom_event_target_get(ev);
+	r = egueb_dom_event_multimedia_video_renderer_get(ev);
+#if BUILD_GST_EGUEB
+	vp = gst_egueb_video_provider_new(NULL, r, n);
+#endif
+	egueb_dom_event_multimedia_video_provider_set(ev, vp);
+	egueb_dom_node_unref(n);
+}
 
 static Eina_Bool _efl_egueb_document_timer_cb(void *data)
 {
@@ -335,6 +354,15 @@ void efl_egueb_document_setup(Efl_Egueb_Document *thiz, Egueb_Dom_Node *doc)
 				_efl_egueb_document_script_scripter_cb, EINA_TRUE, thiz);
 		thiz->scripters = eina_hash_string_superfast_new(EINA_FREE_CB(egueb_dom_scripter_free));
 	}
+
+	/* check for the multimedia feature */
+	thiz->multimedia = egueb_dom_node_feature_get(doc, EGUEB_DOM_FEATURE_MULTIMEDIA_NAME, NULL);
+	if (thiz->multimedia)
+	{
+		egueb_dom_node_event_listener_add(thiz->doc,
+				EGUEB_DOM_EVENT_MULTIMEDIA_VIDEO,
+				_efl_egueb_document_multimedia_video_cb, EINA_TRUE, thiz);
+	}
 }
 
 void efl_egueb_document_cleanup(Efl_Egueb_Document *thiz)
@@ -385,6 +413,8 @@ void efl_egueb_document_cleanup(Efl_Egueb_Document *thiz)
 		eina_hash_free(thiz->scripters);
 		egueb_dom_feature_unref(thiz->script);
 	}
+	if (thiz->multimedia)
+		egueb_dom_feature_unref(thiz->multimedia);
 }
 
 void efl_egueb_document_fps_set(Efl_Egueb_Document *thiz, int fps)

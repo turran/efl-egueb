@@ -33,3 +33,8 @@ src_lib_libefl_egueb_la_CPPFLAGS += @EGUEB_JS_SM_CFLAGS@
 src_lib_libefl_egueb_la_LIBADD += @EGUEB_JS_SM_LIBS@
 endif
 
+if BUILD_GST_EGUEB
+src_lib_libefl_egueb_la_CPPFLAGS += @GST_EGUEB_CFLAGS@
+src_lib_libefl_egueb_la_LIBADD += @GST_EGUEB_LIBS@
+endif
+
