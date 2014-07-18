@@ -309,7 +309,7 @@ static Eina_Bool _efl_egueb_window_x_buffer_setup(Efl_Egueb_Window_X *thiz)
 	/* get the format based on the x attributes */
 	if (!_efl_egueb_window_x_visual_to_format(thiz->visual, thiz->depth, &thiz->format))
 	{
-		printf("no format\n");
+		ERR("No format available for visual, nothing to do.");
 		return EINA_FALSE;
 	}
 	/* FIXME ecore is giving xrgb8888 format, weird ... */
