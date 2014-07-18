@@ -162,7 +162,7 @@ AM_CONDITIONAL([BUILD_GST_EGUEB], [test "x${build_gst_egueb}" = "xyes"])
 
 AM_PROG_CC_C_O
 
-EFL_CHECK_COMPILER_FLAGS([EFL_EGUEB], [-Wall -Wextra -Wshadow])
+EFL_CHECK_COMPILER_FLAGS([EFL_EGUEB], [-Wall])
 
 
 ### Checks for linker characteristics
