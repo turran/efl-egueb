@@ -76,6 +76,7 @@ fi
 
 AM_CONDITIONAL([BUILD_EDJE_EXTERNAL], [test "x${build_edje_external}" = "xyes"])
 
+### Ecore X window
 AC_ARG_ENABLE([ecore-x], [AS_HELP_STRING([--enable-ecore-x], [Enable Ecore X window])],
   [
     if test "x$enableval" = "xyes" ; then
@@ -98,6 +99,31 @@ if test "x${build_ecore_x}" = "xyes"; then
   AC_DEFINE([BUILD_ECORE_X], [1], [Have support for ecore_x])
 fi
 AM_CONDITIONAL([BUILD_ECORE_X], [test "x${build_ecore_x}" = "xyes"])
+
+### SMIL based features
+AC_ARG_ENABLE([egueb-smil], [AS_HELP_STRING([--enable-egueb-smil], [Enable SMIL animations support])],
+  [
+    if test "x$enableval" = "xyes" ; then
+       want_egueb_smil="yes"
+    else
+       want_egueb_smil="no"
+    fi
+  ],
+  [want_egueb_smil="yes"]
+)
+
+PKG_CHECK_MODULES([EGUEB_SMIL], [egueb-smil], [have_egueb_smil="yes"], [have_egueb_smil="no"])
+build_egueb_smil="no"
+
+if test "x${have_egueb_smil}" = "xyes" -a "x${want_egueb_smil}" = "xyes"; then
+  build_egueb_smil="yes"
+  requirements_pc="${requirements_pc} egueb-smil"
+fi
+
+if test "x${build_egueb_smil}" = "xyes"; then
+  AC_DEFINE([BUILD_EGUEB_SMIL], [1], [Have support for egueb_smil])
+fi
+AM_CONDITIONAL([BUILD_EGUEB_SMIL], [test "x${build_egueb_smil}" = "xyes"])
 
 ### JavaScript (SpiderMonkey based) script support
 AC_ARG_ENABLE([egueb-js-sm], [AS_HELP_STRING([--enable-egueb-js-sm], [JavaScript (SpiderMonkey based) scripter])],
@@ -189,6 +215,7 @@ echo
 echo
 echo "Configuration Options Summary:"
 echo
+echo "  SMIL support..............................: ${build_egueb_smil}"
 echo "  OpenGL support............................: ${have_gl}"
 echo "  Edje external support.....................: ${build_edje_external}"
 echo "  Window support:"

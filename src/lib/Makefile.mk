@@ -38,3 +38,8 @@ src_lib_libefl_egueb_la_CPPFLAGS += @GST_EGUEB_CFLAGS@
 src_lib_libefl_egueb_la_LIBADD += @GST_EGUEB_LIBS@
 endif
 
+if BUILD_EGUEB_SMIL
+src_lib_libefl_egueb_la_CPPFLAGS += @EGUEB_SMIL_CFLAGS@
+src_lib_libefl_egueb_la_LIBADD += @EGUEB_SMIL_LIBS@
+endif
+

@@ -22,11 +22,13 @@ typedef struct _Efl_Egueb_Document
 {
 	Egueb_Dom_Node *doc;
 	Egueb_Dom_Feature *io;
-	Egueb_Dom_Feature *animation;
 	Egueb_Dom_Feature *script;
 	Egueb_Dom_Feature *multimedia;
 
+#if BUILD_EGUEB_SMIL
+	Egueb_Dom_Feature *animation;
 	Ecore_Timer *animator;
+#endif
 	Ecore_Idle_Enterer *idle_enterer;
 	Eina_Hash *scripters;
 } Efl_Egueb_Document;

@@ -28,6 +28,10 @@
 #include <Gst_Egueb.h>
 #endif
 
+#if BUILD_EGUEB_SMIL
+#include <Egueb_Smil.h>
+#endif
+
 #include <libgen.h>
 #include <stdio.h>
 /* Put the common interfaces with EFL here, like:
@@ -290,13 +294,15 @@ static void _efl_egueb_document_multimedia_video_cb(Egueb_Dom_Event *ev, void *d
 	egueb_dom_node_unref(n);
 }
 
+#if BUILD_EGUEB_SMIL
 static Eina_Bool _efl_egueb_document_timer_cb(void *data)
 {
 	Efl_Egueb_Document *thiz = data;
 
-	egueb_dom_feature_animation_tick(thiz->animation);
+	egueb_smil_feature_animation_tick(thiz->animation);
 	return EINA_TRUE;
 }
+#endif
 
 static Eina_Bool _efl_egueb_document_idle_enterer_cb(void *data)
 {
@@ -334,17 +340,18 @@ void efl_egueb_document_setup(Efl_Egueb_Document *thiz, Egueb_Dom_Node *doc)
 
 	/* check for animation feature */
 	thiz->animation = egueb_dom_node_feature_get(thiz->doc,
-			EGUEB_DOM_FEATURE_ANIMATION_NAME, NULL);
+			EGUEB_SMIL_FEATURE_ANIMATION_NAME, NULL);
 	/* register our own timer for the anim in case we have one */
+#if BUILD_EGUEB_SMIL
 	if (thiz->animation)
 	{
 		int fps;
 
-		egueb_dom_feature_animation_fps_get(thiz->animation, &fps);
+		egueb_smil_feature_animation_fps_get(thiz->animation, &fps);
 		if (fps > 0)
 			thiz->animator = ecore_timer_add(1.0/fps, _efl_egueb_document_timer_cb, thiz);
 	}
-
+#endif
 	/* check for the script feature */
 	thiz->script = egueb_dom_node_feature_get(doc, EGUEB_DOM_FEATURE_SCRIPT_NAME, NULL);
 	if (thiz->script)
@@ -404,10 +411,12 @@ void efl_egueb_document_cleanup(Efl_Egueb_Document *thiz)
 		thiz->doc = NULL;
 	}
 
+#if BUILD_EGUEB_SMIL
 	if (thiz->animator)
 		ecore_timer_del(thiz->animator);
 	if (thiz->animation)
 		egueb_dom_feature_unref(thiz->animation);
+#endif
 	if (thiz->script)
 	{
 		eina_hash_free(thiz->scripters);
@@ -419,11 +428,13 @@ void efl_egueb_document_cleanup(Efl_Egueb_Document *thiz)
 
 void efl_egueb_document_fps_set(Efl_Egueb_Document *thiz, int fps)
 {
+#if BUILD_EGUEB_SMIL
 	if (fps < 0) return;
 	if (!thiz->animation) return;
 
-	egueb_dom_feature_animation_fps_set(thiz->animation, fps);
+	egueb_smil_feature_animation_fps_set(thiz->animation, fps);
 	ecore_timer_interval_set(thiz->animator, 1.0/fps);
+#endif
 }
 /*============================================================================*
  *                                   API                                      *
