@@ -25,6 +25,10 @@
 #if BUILD_GST_EGUEB
 #include <Gst_Egueb.h>
 #endif
+
+#if BUILD_EGUEB_SMIL
+#include <Egueb_Smil.h>
+#endif
 /*============================================================================*
  *                                  Local                                     *
  *============================================================================*/
@@ -41,6 +45,9 @@ EAPI int efl_egueb_init(void)
 	if (++_init != 1)
 		return _init;
 	egueb_dom_init();
+#if BUILD_EGUEB_SMIL
+	egueb_smil_init();
+#endif
 #if BUILD_EGUEB_JS_SM
 	egueb_js_sm_init();
 #endif
@@ -61,6 +68,9 @@ EAPI int efl_egueb_shutdown(void)
 #endif
 #if BUILD_GST_EGUEB
 	gst_egueb_shutdown();
+#endif
+#if BUILD_EGUEB_SMIL
+	egueb_smil_shutdown();
 #endif
 	egueb_dom_shutdown();
 	return _init;
