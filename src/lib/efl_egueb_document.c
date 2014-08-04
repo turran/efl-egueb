@@ -170,7 +170,7 @@ beach:
 	egueb_dom_node_unref(node);
 }
 
-/* TODO the idea is to use async file loading (either http://, file:// etc) */
+/* the idea is to use async file loading (either http://, file:// etc) */
 static void _efl_egueb_document_io_data_cb(Egueb_Dom_Event *ev, void *data EINA_UNUSED)
 {
 	Egueb_Dom_Uri uri;
