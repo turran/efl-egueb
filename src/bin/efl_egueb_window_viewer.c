@@ -92,7 +92,6 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 	egueb_dom_parser_parse(s, &doc);
-	enesim_stream_unref(s);
 
 	thiz.file = filename;
 	thiz.width = width;
