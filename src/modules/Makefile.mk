@@ -1,7 +1,7 @@
 
 if BUILD_EDJE_EXTERNAL
 
-pkgdir = @EDJE_MODULEDIR@/egueb/$(MODULE_ARCH)
+pkgdir = @EDJE_MODULEDIR@/egueb/@EDJE_MODULEARCH@
 pkg_LTLIBRARIES = src/modules/module.la
 
 src_modules_module_la_CPPFLAGS = \

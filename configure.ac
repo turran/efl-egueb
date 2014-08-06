@@ -71,7 +71,9 @@ build_edje_external="no"
 if test "x${have_edje}" = "xyes" ; then
   build_edje_external="yes"
   EDJE_MODULEDIR=$(${PKG_CONFIG} --variable=modules edje)
+  EDJE_MODULEARCH=$(${PKG_CONFIG} --variable=module_arch edje)
   AC_SUBST([EDJE_MODULEDIR])
+  AC_SUBST([EDJE_MODULEARCH])
 fi
 
 AM_CONDITIONAL([BUILD_EDJE_EXTERNAL], [test "x${build_edje_external}" = "xyes"])
