@@ -20,8 +20,8 @@
 
 EAPI Evas_Object * efl_egueb_smart_new(Evas *e);
 EAPI Egueb_Dom_Node * efl_egueb_smart_document_get(Evas_Object *o);
-EAPI void efl_egueb_smart_file_set(Evas_Object *o, const char *file);
-EAPI const char * efl_egueb_smart_file_get(Evas_Object *o);
+EAPI void efl_egueb_smart_document_set(Evas_Object *o, Egueb_Dom_Node *doc);
+EAPI void efl_egueb_smart_stream_set(Evas_Object *o, Enesim_Stream *s);
 EAPI void efl_egueb_smart_debug_damage_set(Evas_Object *o, Eina_Bool debug);
 EAPI void efl_egueb_smart_fps_set(Evas_Object *o, int fps);
 

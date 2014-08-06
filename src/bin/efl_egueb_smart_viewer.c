@@ -121,6 +121,7 @@ static void _cb_dir(const char *name, const char *path, void *user_data)
 int main(int argc, char *argv[])
 {
 	Efl_Svg_Viewer thiz;
+	Enesim_Stream *s;
 	Ecore_Evas *ee;
 	Evas *evas;
 	Evas_Object *o;
@@ -249,6 +250,13 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
+	s = enesim_stream_file_new(files->data, "r");
+	if (!s)
+	{
+		printf("Impossible to create the file stream\n");
+		return 0;
+	}
+
 	thiz.files = files;
 	thiz.current = current;
 	thiz.width = width;
@@ -265,8 +273,9 @@ int main(int argc, char *argv[])
 	ecore_evas_callback_resize_set(ee, _cb_resize);
 
 	/* create the main svg object */
+
 	o = efl_egueb_smart_new(evas);
-	efl_egueb_smart_file_set(o, files->data);
+	efl_egueb_smart_stream_set(o, s);
 	efl_egueb_smart_debug_damage_set(o, damages);
 	efl_egueb_smart_fps_set(o, fps);
 	evas_object_move(o, 0, 0);

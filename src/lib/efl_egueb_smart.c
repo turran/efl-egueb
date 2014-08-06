@@ -88,10 +88,6 @@ typedef struct _Efl_Egueb_Smart
 	Eina_List *damage_objects;
 	int damage_count;
 
-	/* app descriptor */
-	char *base_dir;
-	char *go_to;
-
 	/* event interface for zoom and pan */
 	Eina_Bool down;
 	Evas_Coord down_x, down_y;
@@ -100,29 +96,6 @@ typedef struct _Efl_Egueb_Smart
 } Efl_Egueb_Smart;
 
 static Evas_Smart *_smart = NULL;
-/*----------------------------------------------------------------------------*
- *                           Application interface                            *
- *----------------------------------------------------------------------------*/
-#if 0
-static const char * _efl_egueb_smart_base_dir_get(Egueb_Dom_Node *e EINA_UNUSED, void *data)
-{
-	Efl_Egueb_Smart *thiz = data;
-	return thiz->base_dir;
-}
-
-static void _efl_egueb_smart_go_to(Egueb_Dom_Node *e EINA_UNUSED, void *data, const char *uri)
-{
-	Efl_Egueb_Smart *thiz = data;
-	thiz->go_to = strdup(uri);
-}
-
-static Esvg_Element_Svg_Application_Descriptor _efl_egueb_smart_descriptor = {
-	/* .base_dir_get 		  = */ _efl_egueb_smart_base_dir_get,
-	/* .go_to 			  = */ _efl_egueb_smart_go_to,
-	/* .script_alert 		  = */ NULL,
-	/* .video_provider_descriptor_get = */ NULL
-};
-#endif
 
 static inline double _efl_egueb_smart_timestamp_get(void)
 {
@@ -392,6 +365,7 @@ static Eina_Bool _efl_egueb_smart_idler_cb(void *data)
 	double process_start, process_end;
 
 	/* check if we dont have to jump to another file */
+#if 0
 	if (thiz->go_to)
 	{
 		efl_egueb_smart_file_set(thiz->o, thiz->go_to);
@@ -399,6 +373,7 @@ static Eina_Bool _efl_egueb_smart_idler_cb(void *data)
 		thiz->go_to = NULL;
 		new_svg = EINA_TRUE;
 	}
+#endif
 
 	if (!thiz->doc)
 		goto done;
@@ -523,17 +498,6 @@ static void _efl_egueb_smart_setup(Efl_Egueb_Smart *thiz, Egueb_Dom_Node *doc)
 
 static void _efl_egueb_smart_cleanup(Efl_Egueb_Smart *thiz)
 {
-	if (thiz->file)
-	{
-		free(thiz->file);
-		thiz->file = NULL;
-	}
-	if (thiz->base_dir)
-	{
-		free(thiz->base_dir);
-		thiz->base_dir = NULL;
-	}
-
 	if (thiz->input)
 	{
 		egueb_dom_input_unref(thiz->input);
@@ -672,7 +636,7 @@ static void _efl_egueb_smart_del(Evas_Object *obj)
 	Efl_Egueb_Smart *thiz;
 
 	thiz = evas_object_smart_data_get(obj);
-	efl_egueb_smart_file_set(obj, NULL);
+	efl_egueb_smart_document_set(obj, NULL);
 	egueb_dom_node_unref(thiz->doc);
 	/* the idler */
 	ecore_idle_enterer_del(thiz->idler);
@@ -682,8 +646,6 @@ static void _efl_egueb_smart_del(Evas_Object *obj)
 	evas_object_del(thiz->bkg);
 	evas_object_del(thiz->img);
 	evas_object_del(thiz->img_clip);
-	if (thiz->file)
-		free(thiz->file);
 	free(thiz);
 }
 
@@ -808,50 +770,26 @@ EAPI Egueb_Dom_Node * efl_egueb_smart_document_get(Evas_Object *o)
 	return egueb_dom_node_ref(thiz->doc);	
 }
 
-EAPI void efl_egueb_smart_file_set(Evas_Object *o, const char *file)
+EAPI void efl_egueb_smart_document_set(Evas_Object *o, Egueb_Dom_Node *doc)
 {
 	Efl_Egueb_Smart *thiz;
-	Egueb_Dom_Node *doc = NULL;
-	Enesim_Stream *im;
-	char base_dir[PATH_MAX];
-	char *tmp;
 
 	thiz = evas_object_smart_data_get(o);
 	_efl_egueb_smart_cleanup(thiz);
-	if (!file) return;
-
-	im = enesim_stream_file_new(file, "r+");
-	if (!im)
-	{
-		return;
-	}
-	egueb_dom_parser_parse(im, &doc);
-	enesim_stream_unref(im);
-
 	if (!doc)
 	{
 		return;
 	}
 	_efl_egueb_smart_setup(thiz, doc);
-
-	thiz->file = strdup(file);
-	strncpy(base_dir, thiz->file, PATH_MAX);
-	tmp = dirname(base_dir);
-	if (tmp)
-	{
-		if (!strcmp(tmp, "."))
-			tmp = "./";
-		thiz->base_dir = strdup(tmp);
-	}
 	evas_object_smart_changed(o);
 }
 
-EAPI const char * efl_egueb_smart_file_get(Evas_Object *o)
+EAPI void efl_egueb_smart_stream_set(Evas_Object *o, Enesim_Stream *s)
 {
-	Efl_Egueb_Smart *thiz;
+	Egueb_Dom_Node *doc = NULL;
 
-	thiz = evas_object_smart_data_get(o);
-	return thiz->file;
+	egueb_dom_parser_parse(s, &doc);
+	efl_egueb_smart_document_set(o, doc);
 }
 
 EAPI void efl_egueb_smart_debug_damage_set(Evas_Object *o, Eina_Bool debug)
