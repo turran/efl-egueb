@@ -43,8 +43,16 @@ static Eina_Bool _efl_egueb_window_key_down(void *data,
 		int type, void *event)
 {
 	Efl_Egueb_Window *thiz = data;
+	Ecore_Event_Key *ev = event;
+	Egueb_Dom_String *s;
 
-	printf("key down\n");
+	if (!_check_window(thiz, ev->window))
+		return EINA_TRUE;
+
+	s = egueb_dom_string_new_with_string(ev->key);
+	if (thiz->input)
+		egueb_dom_input_feed_key_down(thiz->input, s);
+
 	return EINA_TRUE;
 }
 
@@ -52,8 +60,19 @@ static Eina_Bool _efl_egueb_window_key_up(void *data,
 		int type, void *event)
 {
 	Efl_Egueb_Window *thiz = data;
+	Ecore_Event_Key *ev = event;
+	Egueb_Dom_String *s;
 
-	printf("key up\n");
+	if (!_check_window(thiz, ev->window))
+		return EINA_TRUE;
+
+	/* Given that ecore already produces the final key,
+	 * is ok to send it
+	 */
+	s = egueb_dom_string_new_with_string(ev->key);
+	if (thiz->input)
+		egueb_dom_input_feed_key_up(thiz->input, s);
+
 	return EINA_TRUE;
 }
 
@@ -66,7 +85,9 @@ static Eina_Bool _efl_egueb_window_mouse_button_down(void *data,
 	if (!_check_window(thiz, ev->window))
 		return EINA_TRUE;
 
-	if (thiz->input) egueb_dom_input_feed_mouse_down(thiz->input, ev->buttons);
+	if (thiz->input)
+		egueb_dom_input_feed_mouse_down(thiz->input, ev->buttons);
+
 	return EINA_TRUE;
 }
 
@@ -79,7 +100,9 @@ static Eina_Bool _efl_egueb_window_mouse_button_up(void *data,
 	if (!_check_window(thiz, ev->window))
 		return EINA_TRUE;
 
-	if (thiz->input) egueb_dom_input_feed_mouse_up(thiz->input, ev->buttons);
+	if (thiz->input)
+		egueb_dom_input_feed_mouse_up(thiz->input, ev->buttons);
+
 	return EINA_TRUE;
 }
 
