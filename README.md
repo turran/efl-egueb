@@ -11,7 +11,7 @@ Dependencies
 + [EFL](http://www.enlightenment.org) (Mainly ecore and evas for the smart object, optionally edje for the external object)
 + [Egueb](https://www.github.com/turran/egueb) (Mainly egueb-dom and optionally egueb-smil or egueb-svg)
 + [Gst-Egueb](https://www.github.com/turran/gst-egueb) (Optional: In case you want multimedia support using GStreamer) 
-+ [Egueb-JS-SM](https://www.github.com/turran/egueb-js-sm) (Option: In case you want JavaScript scripting support)
++ [Egueb-JS-SM](https://www.github.com/turran/egueb-js-sm) (Optional: In case you want JavaScript scripting support)
 
 Features
 ========
