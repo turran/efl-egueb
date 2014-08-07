@@ -127,6 +127,31 @@ if test "x${build_egueb_smil}" = "xyes"; then
 fi
 AM_CONDITIONAL([BUILD_EGUEB_SMIL], [test "x${build_egueb_smil}" = "xyes"])
 
+### SVG based features
+AC_ARG_ENABLE([egueb-svg], [AS_HELP_STRING([--enable-egueb-svg], [Enable SVG animations support])],
+  [
+    if test "x$enableval" = "xyes" ; then
+       want_egueb_svg="yes"
+    else
+       want_egueb_svg="no"
+    fi
+  ],
+  [want_egueb_svg="yes"]
+)
+
+PKG_CHECK_MODULES([EGUEB_SVG], [egueb-svg], [have_egueb_svg="yes"], [have_egueb_svg="no"])
+build_egueb_svg="no"
+
+if test "x${have_egueb_svg}" = "xyes" -a "x${want_egueb_svg}" = "xyes"; then
+  build_egueb_svg="yes"
+  requirements_pc="${requirements_pc} egueb-svg"
+fi
+
+if test "x${build_egueb_svg}" = "xyes"; then
+  AC_DEFINE([BUILD_EGUEB_SVG], [1], [Have support for egueb_svg])
+fi
+AM_CONDITIONAL([BUILD_EGUEB_SVG], [test "x${build_egueb_svg}" = "xyes"])
+
 ### JavaScript (SpiderMonkey based) script support
 AC_ARG_ENABLE([egueb-js-sm], [AS_HELP_STRING([--enable-egueb-js-sm], [JavaScript (SpiderMonkey based) scripter])],
   [
@@ -218,6 +243,7 @@ echo
 echo "Configuration Options Summary:"
 echo
 echo "  SMIL support..............................: ${build_egueb_smil}"
+echo "  SVG support...............................: ${build_egueb_svg}"
 echo "  OpenGL support............................: ${have_gl}"
 echo "  Edje external support.....................: ${build_edje_external}"
 echo "  Window support:"

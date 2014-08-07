@@ -42,10 +42,9 @@ typedef double		GLdouble;	/* double precision float */
 typedef struct _Efl_Egueb_Smart
 {
 	/* properties */
-	char *file;
 	int fps;
 	Eina_Bool debug_damage;
-	Eina_Bool zoom_and_pan;
+	Egueb_Dom_Node *doc;
 
 	/* private */
 	Evas *evas;
@@ -63,7 +62,6 @@ typedef struct _Efl_Egueb_Smart
 	Evas_Object *img;
 	Evas_Object *img_clip;
 
-	Egueb_Dom_Node *doc;
 	Egueb_Dom_Feature *render;
 	Egueb_Dom_Feature *window;
 	Egueb_Dom_Feature *animation;
@@ -87,12 +85,6 @@ typedef struct _Efl_Egueb_Smart
 	Eina_List *damage_rectangles;
 	Eina_List *damage_objects;
 	int damage_count;
-
-	/* event interface for zoom and pan */
-	Eina_Bool down;
-	Evas_Coord down_x, down_y;
-	Evas_Coord img_down_x, img_down_y;
-	Eina_Bool scrolling;
 } Efl_Egueb_Smart;
 
 static Evas_Smart *_smart = NULL;
@@ -158,58 +150,40 @@ static void _efl_egueb_smart_damage_clear(Efl_Egueb_Smart *thiz)
 	thiz->damage_count = 0;
 }
 
-static void _efl_egueb_smart_mouse_up(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+static void _efl_egueb_smart_mouse_up(void *data, Evas *e EINA_UNUSED,
+		Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
 	Efl_Egueb_Smart *thiz = (Efl_Egueb_Smart *)data;
-/* 	Evas_Event_Mouse_Up *ev = event_info; */
 
 	if (thiz->input)
 		egueb_dom_input_feed_mouse_up(thiz->input, 0);
-	thiz->down = EINA_FALSE;
 }
 
-static void _efl_egueb_smart_mouse_down(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+static void _efl_egueb_smart_mouse_down(void *data, Evas *e EINA_UNUSED,
+		Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
 	Efl_Egueb_Smart *thiz = (Efl_Egueb_Smart *)data;
- 	Evas_Event_Mouse_Down *ev = event_info;
-	Evas_Coord ix, iy;
 
 	if (thiz->input)
 		egueb_dom_input_feed_mouse_down(thiz->input, 0);
-
-	thiz->down = EINA_TRUE;
-	evas_object_geometry_get(thiz->img, &ix, &iy, NULL, NULL);
-	thiz->down_x = ev->canvas.x;
-	thiz->down_y = ev->canvas.y;
-	thiz->img_down_x = ix;
-	thiz->img_down_y = iy;
 }
 
-static void _efl_egueb_smart_mouse_move(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info)
+static void _efl_egueb_smart_mouse_move(void *data, Evas *e EINA_UNUSED,
+		Evas_Object *obj EINA_UNUSED, void *event_info)
 {
 	Efl_Egueb_Smart *thiz = (Efl_Egueb_Smart *)data;
 	Evas_Event_Mouse_Move *ev = event_info;
 	Evas_Coord ix;
 	Evas_Coord iy;
-	int svgx;
-	int svgy;
+	int doc_x;
+	int doc_y;
 
 	/* check if we are dragging */
-	if (thiz->down && thiz->zoom_and_pan)
-	{
-		Evas_Coord nx, ny;
-		
-		/* TODO if we do, first send the mouse up on the doc */
-		nx = thiz->img_down_x + (ev->cur.canvas.x - thiz->down_x);
-		ny = thiz->img_down_y + (ev->cur.canvas.y - thiz->down_y);
-		/* start moving the image origin */
-		evas_object_move(thiz->img, nx, ny);
-	}
 	evas_object_geometry_get(thiz->img, &ix, &iy, NULL, NULL);
-	svgx = ev->cur.canvas.x - ix;
-	svgy = ev->cur.canvas.y - iy;
+	doc_x = ev->cur.canvas.x - ix;
+	doc_y = ev->cur.canvas.y - iy;
 	if (thiz->input)
-		egueb_dom_input_feed_mouse_move(thiz->input, svgx, svgy);
+		egueb_dom_input_feed_mouse_move(thiz->input, doc_x, doc_y);
 }
 
 static void _efl_egueb_smart_reconfigure(Efl_Egueb_Smart *thiz)
@@ -551,7 +525,6 @@ static void _efl_egueb_smart_add(Evas_Object *obj)
 
 	/* set default properties */
 	thiz->debug_damage = EINA_FALSE;
-	thiz->zoom_and_pan = EINA_TRUE;
 	thiz->fps = 30;
 
 	/* create the evas objects */
@@ -561,7 +534,7 @@ static void _efl_egueb_smart_add(Evas_Object *obj)
 	thiz->bkg = evas_object_rectangle_add(e);
 	evas_object_color_set(thiz->bkg, 255, 255, 255, 255);
 	/* FIXME In theory if we have a smart object below us and
-	 * we ar enot on top of the svg area (img) but on the
+	 * we are not on top of the drawing area (img) but on the
 	 * background (bkg) object, any event there should be
 	 * passed to the lower (smart object), but it does
 	 * not work either ....
@@ -626,9 +599,8 @@ static void _efl_egueb_smart_add(Evas_Object *obj)
 
 	thiz->backend = backend;
 	evas_render_method_list_free(engines);
-
-	/* set the different application callbacks */
-	//egueb_svg_document_filename_get_cb_set(thiz->doc, _efl_egueb_smart_filename_get, thiz);
+	/* make sure to propagate the events */
+	evas_object_propagate_events_set(obj, EINA_TRUE);
 }
 
 static void _efl_egueb_smart_del(Evas_Object *obj)
@@ -809,11 +781,4 @@ EAPI void efl_egueb_smart_fps_set(Evas_Object *o, int fps)
 	/* remove the animtor and add another one with the correct fps */
 	thiz->fps = fps;
 	efl_egueb_document_fps_set(&thiz->edoc, fps);
-}
-
-EAPI void efl_egueb_zoom_and_pan_enable(Evas_Object *o, Eina_Bool enable)
-{
-	Efl_Egueb_Smart *thiz;
-	thiz = evas_object_smart_data_get(o);
-	thiz->zoom_and_pan = enable;
 }

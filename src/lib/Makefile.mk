@@ -17,6 +17,7 @@ src_lib_libefl_egueb_la_SOURCES = \
 src/lib/efl_egueb_document.c \
 src/lib/efl_egueb_main.c \
 src/lib/efl_egueb_smart.c \
+src/lib/efl_egueb_smart_svg.c \
 src/lib/efl_egueb_window.c
 
 src_lib_libefl_egueb_la_LIBADD = @EFL_EGUEB_LIBS@
@@ -43,3 +44,7 @@ src_lib_libefl_egueb_la_CPPFLAGS += @EGUEB_SMIL_CFLAGS@
 src_lib_libefl_egueb_la_LIBADD += @EGUEB_SMIL_LIBS@
 endif
 
+if BUILD_EGUEB_SVG
+src_lib_libefl_egueb_la_CPPFLAGS += @EGUEB_SVG_CFLAGS@
+src_lib_libefl_egueb_la_LIBADD += @EGUEB_SVG_LIBS@
+endif

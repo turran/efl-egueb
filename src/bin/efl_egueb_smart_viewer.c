@@ -273,11 +273,13 @@ int main(int argc, char *argv[])
 	ecore_evas_callback_resize_set(ee, _cb_resize);
 
 	/* create the main svg object */
-
 	o = efl_egueb_smart_new(evas);
 	efl_egueb_smart_stream_set(o, s);
 	efl_egueb_smart_debug_damage_set(o, damages);
 	efl_egueb_smart_fps_set(o, fps);
+	/* enable the svg extension */
+	efl_egueb_smart_svg_setup(o);
+
 	evas_object_move(o, 0, 0);
 	evas_object_resize(o, width, height);
 	evas_object_show(o);
