@@ -130,10 +130,7 @@ static void _efl_egueb_document_io_relative_data_cb(Egueb_Dom_Uri *uri,
 	Egueb_Dom_Node *doc;
 	Egueb_Dom_Node *node;
 	Egueb_Dom_String *location;
-	char *s_location;
-	char *filename;
-	char *dir;
-	int ret;
+	Egueb_Dom_Uri resolved;
 
 	node = egueb_dom_event_target_get(ev);
 	doc = egueb_dom_node_owner_document_get(node);
@@ -152,19 +149,15 @@ static void _efl_egueb_document_io_relative_data_cb(Egueb_Dom_Uri *uri,
 		goto beach;
 	}
 
-	s_location =  strdup(egueb_dom_string_string_get(location));
-	egueb_dom_string_unref(location);
-
-	dir = dirname(s_location);
-	ret = asprintf(&filename, "%s/%s", dir,
-			egueb_dom_string_string_get(uri->location));
-
-	free(s_location);
-	if (ret < 0)
+	if (!egueb_dom_uri_resolve(uri, location, &resolved))
+	{
+		WRN("Can not resolve the URI");
+		egueb_dom_string_unref(location);
 		goto beach;
+	}
 
-	location = egueb_dom_string_steal(filename);
-	_efl_egueb_document_io_data_load(location, ev);
+	_efl_egueb_document_io_data_load(resolved.location, ev);
+	egueb_dom_uri_cleanup(&resolved);
 	egueb_dom_string_unref(location);
 beach:
 	egueb_dom_node_unref(node);
@@ -208,7 +201,7 @@ static void _efl_egueb_document_io_image_async_cb(Enesim_Buffer *b, void *data,
 	}
 	else
 	{
-		DBG("Image loaded correectly");
+		DBG("Image loaded correctly");
 		src = enesim_surface_new_buffer_from(b);
 	}
 
@@ -228,6 +221,29 @@ static void _efl_egueb_document_io_image_cb(Egueb_Dom_Event *ev, void *data EINA
 			egueb_dom_event_ref(ev),
 			NULL);
 	enesim_stream_unref(s);
+}
+
+static void _efl_egueb_document_navigation_go_to_cb(Egueb_Dom_Event *ev, void *data)
+{
+	Efl_Egueb_Document *thiz = data;
+	Egueb_Dom_Uri uri;
+
+	egueb_dom_event_navigation_uri_get(ev, &uri);
+	/* TODO in case we dont have any uri, but only fragment ? */
+	if (uri.fragment != NULL)
+		goto has_fragment;
+
+	ERR("Going to '%s' (%d)", egueb_dom_string_string_get(
+			uri.location), uri.type);
+	if (uri.type == EGUEB_DOM_URI_TYPE_ABSOLUTE)
+	{
+	}
+	else
+	{
+	}
+
+has_fragment:
+	egueb_dom_uri_cleanup(&uri);
 }
 
 static void _efl_egueb_document_script_scripter_cb(Egueb_Dom_Event *ev, void *data)
@@ -341,6 +357,17 @@ void efl_egueb_document_setup(Efl_Egueb_Document *thiz, Egueb_Dom_Node *doc)
 		ecore_con_url_init();
 	}
 
+	/* check the navigation feature */
+	thiz->navigation = egueb_dom_node_feature_get(thiz->doc,
+			EGUEB_DOM_FEATURE_NAVIGATION_NAME, NULL);
+	if (thiz->navigation)
+	{
+		egueb_dom_node_event_listener_add(thiz->doc,
+				EGUEB_DOM_EVENT_NAVIGATION_GO_TO,
+				_efl_egueb_document_navigation_go_to_cb,
+				EINA_TRUE, thiz);
+	}
+
 #if BUILD_EGUEB_SMIL
 	/* check for animation feature */
 	thiz->animation = egueb_dom_node_feature_get(thiz->doc,
@@ -408,6 +435,15 @@ void efl_egueb_document_cleanup(Efl_Egueb_Document *thiz)
 		ecore_con_url_shutdown();
 		ecore_con_shutdown();
 	}
+
+	if (thiz->navigation)
+	{
+		egueb_dom_node_event_listener_remove(thiz->doc,
+				EGUEB_DOM_EVENT_NAVIGATION_GO_TO,
+				_efl_egueb_document_navigation_go_to_cb,
+				EINA_TRUE, thiz);
+	}
+
 	if (thiz->doc)
 	{
 		egueb_dom_node_unref(thiz->doc);

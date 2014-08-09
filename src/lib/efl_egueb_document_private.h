@@ -24,6 +24,7 @@ typedef struct _Efl_Egueb_Document
 	Egueb_Dom_Feature *io;
 	Egueb_Dom_Feature *script;
 	Egueb_Dom_Feature *multimedia;
+	Egueb_Dom_Feature *navigation;
 
 #if BUILD_EGUEB_SMIL
 	Egueb_Dom_Feature *animation;
@@ -31,6 +32,7 @@ typedef struct _Efl_Egueb_Document
 #endif
 	Ecore_Idle_Enterer *idle_enterer;
 	Eina_Hash *scripters;
+
 } Efl_Egueb_Document;
 
 void efl_egueb_document_setup(Efl_Egueb_Document *thiz, Egueb_Dom_Node *doc);
