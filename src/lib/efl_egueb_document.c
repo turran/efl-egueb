@@ -341,11 +341,11 @@ void efl_egueb_document_setup(Efl_Egueb_Document *thiz, Egueb_Dom_Node *doc)
 		ecore_con_url_init();
 	}
 
+#if BUILD_EGUEB_SMIL
 	/* check for animation feature */
 	thiz->animation = egueb_dom_node_feature_get(thiz->doc,
 			EGUEB_SMIL_FEATURE_ANIMATION_NAME, NULL);
 	/* register our own timer for the anim in case we have one */
-#if BUILD_EGUEB_SMIL
 	if (thiz->animation)
 	{
 		int fps;
