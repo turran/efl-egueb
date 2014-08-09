@@ -284,6 +284,8 @@ int main(int argc, char *argv[])
 	evas_object_resize(o, width, height);
 	evas_object_show(o);
 	evas_object_name_set(o, "svg");
+	/* make the object the focused one */
+	evas_object_focus_set(o, EINA_TRUE);
 	thiz.svg = o;
 
 	ecore_evas_resize(ee, width, height);

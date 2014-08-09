@@ -186,6 +186,36 @@ static void _efl_egueb_smart_mouse_move(void *data, Evas *e EINA_UNUSED,
 		egueb_dom_input_feed_mouse_move(thiz->input, doc_x, doc_y);
 }
 
+static void _efl_egueb_smart_key_up(void *data, Evas *e EINA_UNUSED,
+		Evas_Object *obj EINA_UNUSED, void *event_info)
+{
+	Efl_Egueb_Smart *thiz = (Efl_Egueb_Smart *)data;
+
+	if (thiz->input)
+	{
+		Evas_Event_Key_Up *ev = event_info;
+		Egueb_Dom_String *key;
+
+		key = egueb_dom_string_new_with_string(ev->key);
+		egueb_dom_input_feed_key_up(thiz->input, key);
+	}
+}
+
+static void _efl_egueb_smart_key_down(void *data, Evas *e EINA_UNUSED,
+		Evas_Object *obj EINA_UNUSED, void *event_info)
+{
+	Efl_Egueb_Smart *thiz = (Efl_Egueb_Smart *)data;
+
+	if (thiz->input)
+	{
+		Evas_Event_Key_Down *ev = event_info;
+		Egueb_Dom_String *key;
+
+		key = egueb_dom_string_new_with_string(ev->key);
+		egueb_dom_input_feed_key_down(thiz->input, key);
+	}
+}
+
 static void _efl_egueb_smart_reconfigure(Efl_Egueb_Smart *thiz)
 {
 	Evas_Coord x, y, w, h;
@@ -562,6 +592,10 @@ static void _efl_egueb_smart_add(Evas_Object *obj)
 		_efl_egueb_smart_mouse_up, thiz);
 	evas_object_event_callback_add(thiz->img, EVAS_CALLBACK_MOUSE_MOVE,
 		_efl_egueb_smart_mouse_move, thiz);
+	evas_object_event_callback_add(obj, EVAS_CALLBACK_KEY_DOWN,
+		_efl_egueb_smart_key_down, thiz);
+	evas_object_event_callback_add(obj, EVAS_CALLBACK_KEY_UP,
+		_efl_egueb_smart_key_up, thiz);
 	evas_object_smart_data_set(obj, thiz);
 
 	/* the backend to use */
