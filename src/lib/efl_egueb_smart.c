@@ -352,32 +352,116 @@ static Eina_Bool _efl_egueb_smart_surface_reconfigure(Efl_Egueb_Smart *thiz)
 }
 
 
+static void _efl_egueb_smart_setup(Efl_Egueb_Smart *thiz, Egueb_Dom_Node *doc)
+{
+	Egueb_Dom_Feature *ui;
+
+	thiz->doc = doc;
+	/* get the features */
+	thiz->render = egueb_dom_node_feature_get(thiz->doc,
+			EGUEB_DOM_FEATURE_RENDER_NAME, NULL);
+	if (!thiz->render)
+	{
+		egueb_dom_node_unref(thiz->doc);
+		thiz->doc = NULL;
+		return;
+	}
+	thiz->window = egueb_dom_node_feature_get(thiz->doc,
+			EGUEB_DOM_FEATURE_WINDOW_NAME, NULL);
+	if (!thiz->window)
+	{
+		egueb_dom_feature_unref(thiz->render);
+		thiz->render = NULL;
+
+		egueb_dom_node_unref(thiz->doc);
+		thiz->doc = NULL;
+		return;
+	}
+
+	ui = egueb_dom_node_feature_get(thiz->doc,
+			EGUEB_DOM_FEATURE_UI_NAME, NULL);
+	if (ui)
+	{
+		egueb_dom_feature_ui_input_get(ui, &thiz->input);
+		egueb_dom_feature_unref(ui);
+	}
+}
+
+static void _efl_egueb_smart_setup_full(Efl_Egueb_Smart *thiz, Egueb_Dom_Node *doc)
+{
+	efl_egueb_document_setup(&thiz->edoc, egueb_dom_node_ref(doc));
+	_efl_egueb_smart_setup(thiz, doc);
+}
+
+static void _efl_egueb_smart_cleanup(Efl_Egueb_Smart *thiz)
+{
+	if (thiz->input)
+	{
+		egueb_dom_input_unref(thiz->input);
+		thiz->input = NULL;
+	}
+
+	if (thiz->render)
+	{
+		egueb_dom_feature_unref(thiz->render);
+		thiz->render = NULL;
+	}
+
+	if (thiz->window)
+	{
+		egueb_dom_feature_unref(thiz->window);
+		thiz->window = NULL;
+	}
+
+	if (thiz->animation)
+	{
+		egueb_dom_feature_unref(thiz->animation);
+		thiz->animation = NULL;
+	}
+}
+
+static void _efl_egueb_smart_cleanup_full(Efl_Egueb_Smart *thiz)
+{
+	_efl_egueb_smart_cleanup(thiz);
+	if (thiz->doc)
+	{
+		efl_egueb_document_cleanup(&thiz->edoc);
+		egueb_dom_node_unref(thiz->doc);
+		thiz->doc = NULL;
+	}
+}
+
 /* The reason to create another idler is because evas does not allow to hook
- * before the evas_render() is begin called. The smart calculate is the most similar
+ * before the evas_render() is being called. The smart calculate is the most similar
  * case, but whenever you enqueue your calculate during a calculate, it will get
  * triggered again on the same cycle, not the next one.
+ * TODO the PRE_RENDER callback looks like might do it
  */
 static Eina_Bool _efl_egueb_smart_idler_cb(void *data)
 {
 	Efl_Egueb_Smart *thiz = (Efl_Egueb_Smart *)data;
 	Enesim_Log *error = NULL;
 	Eina_Rectangle *r;
-	Eina_Bool new_svg = EINA_FALSE;
+	Eina_Bool new_doc = EINA_FALSE;
 	Eina_Bool ret;
 	/* for benchmarking */
 	double draw_start, draw_end;
 	double process_start, process_end;
 
 	/* check if we dont have to jump to another file */
-#if 0
-	if (thiz->go_to)
+	if (thiz->doc != thiz->edoc.doc)
 	{
-		efl_egueb_smart_file_set(thiz->o, thiz->go_to);
-		free(thiz->go_to);
-		thiz->go_to = NULL;
-		new_svg = EINA_TRUE;
+		_efl_egueb_smart_cleanup(thiz);
+		if (thiz->edoc.doc)
+		{
+			_efl_egueb_smart_setup(thiz, egueb_dom_node_ref(thiz->edoc.doc));
+			evas_object_smart_changed(thiz->o);
+		}
+		/* TODO make sure to notify that a new document is available
+		 * the SVG extension might need it
+		 */
+		new_doc = EINA_TRUE;
 	}
-#endif
 
 	if (!thiz->doc)
 		goto done;
@@ -396,7 +480,7 @@ static Eina_Bool _efl_egueb_smart_idler_cb(void *data)
 			process_end - process_start);
 
 	/* if we jumped to a new file, be sure to send the mouse move */
-	if (new_svg)
+	if (new_doc)
 	{
 		Evas_Coord x;
 		Evas_Coord y;
@@ -464,75 +548,6 @@ done:
 	return EINA_TRUE;
 }
 
-static void _efl_egueb_smart_setup(Efl_Egueb_Smart *thiz, Egueb_Dom_Node *doc)
-{
-	Egueb_Dom_Feature *ui;
-
-	thiz->doc = doc;
-	efl_egueb_document_setup(&thiz->edoc, egueb_dom_node_ref(thiz->doc));
-	/* get the features */
-	thiz->render = egueb_dom_node_feature_get(thiz->doc,
-			EGUEB_DOM_FEATURE_RENDER_NAME, NULL);
-	if (!thiz->render)
-	{
-		egueb_dom_node_unref(thiz->doc);
-		thiz->doc = NULL;
-		return;
-	}
-	thiz->window = egueb_dom_node_feature_get(thiz->doc,
-			EGUEB_DOM_FEATURE_WINDOW_NAME, NULL);
-	if (!thiz->window)
-	{
-		egueb_dom_feature_unref(thiz->render);
-		thiz->render = NULL;
-
-		egueb_dom_node_unref(thiz->doc);
-		thiz->doc = NULL;
-		return;
-	}
-
-	ui = egueb_dom_node_feature_get(thiz->doc,
-			EGUEB_DOM_FEATURE_UI_NAME, NULL);
-	if (ui)
-	{
-		egueb_dom_feature_ui_input_get(ui, &thiz->input);
-		egueb_dom_feature_unref(ui);
-	}
-}
-
-static void _efl_egueb_smart_cleanup(Efl_Egueb_Smart *thiz)
-{
-	if (thiz->input)
-	{
-		egueb_dom_input_unref(thiz->input);
-		thiz->input = NULL;
-	}
-
-	if (thiz->render)
-	{
-		egueb_dom_feature_unref(thiz->render);
-		thiz->render = NULL;
-	}
-
-	if (thiz->window)
-	{
-		egueb_dom_feature_unref(thiz->window);
-		thiz->window = NULL;
-	}
-
-	if (thiz->animation)
-	{
-		egueb_dom_feature_unref(thiz->animation);
-		thiz->animation = NULL;
-	}
-
-	if (thiz->doc)
-	{
-		efl_egueb_document_cleanup(&thiz->edoc);
-		egueb_dom_node_unref(thiz->doc);
-		thiz->doc = NULL;
-	}
-}
 
 /*----------------------------------------------------------------------------*
  *                           Smart object interface                           *
@@ -781,12 +796,12 @@ EAPI void efl_egueb_smart_document_set(Evas_Object *o, Egueb_Dom_Node *doc)
 	Efl_Egueb_Smart *thiz;
 
 	thiz = evas_object_smart_data_get(o);
-	_efl_egueb_smart_cleanup(thiz);
+	_efl_egueb_smart_cleanup_full(thiz);
 	if (!doc)
 	{
 		return;
 	}
-	_efl_egueb_smart_setup(thiz, doc);
+	_efl_egueb_smart_setup_full(thiz, doc);
 	evas_object_smart_changed(o);
 }
 

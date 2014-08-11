@@ -19,6 +19,7 @@
 #include "efl_egueb_main.h"
 
 #include "efl_egueb_document_private.h"
+#include "efl_egueb_io_request_private.h"
 
 #if BUILD_EGUEB_JS_SM
 #include <Egueb_Js_Sm.h>
@@ -42,89 +43,94 @@
 /*============================================================================*
  *                                  Local                                     *
  *============================================================================*/
-typedef struct _Efl_Egueb_Document_Http_Request
+typedef struct _Efl_Egueb_Document_IO_Data_Request
 {
-	Ecore_Con_Url *conn;
-	Eina_Binbuf *data;
+	Efl_Egueb_Document *thiz;
 	Egueb_Dom_Event *ev;
-} Efl_Egueb_Document_Http_Request;
-
-static Eina_Bool _efl_egueb_document_url_data_cb(void *data, int type EINA_UNUSED, void *event)
+} Efl_Egueb_Document_IO_Data_Request;
+/*----------------------------------------------------------------------------*
+ *                            Data event request                              *
+ *----------------------------------------------------------------------------*/
+static void _efl_egueb_document_io_data_completion_cb(Efl_Egueb_IO_Request *r,
+		Enesim_Stream *s)
 {
-	Ecore_Con_Event_Url_Data *ev = event;
-	Efl_Egueb_Document_Http_Request *d = data;
+	Efl_Egueb_Document_IO_Data_Request *data = r->data;
 
-	if (ev->url_con != d->conn)
-		return EINA_TRUE;
-	if (ev->size > 0)
-		eina_binbuf_append_length(d->data, ev->data, ev->size);
-
-	return EINA_TRUE;
+	/* finish the event */
+	egueb_dom_event_io_data_finish(data->ev, enesim_stream_ref(s));
+	/* destroy the request */
+	efl_egueb_io_request_free(r);
 }
 
-static Eina_Bool _efl_egueb_document_url_completion_cb(void *data, int type EINA_UNUSED, void *event)
+static void _efl_egueb_document_io_data_free_cb(Efl_Egueb_IO_Request *r)
 {
-	Ecore_Con_Event_Url_Complete *ev = event;
-	Efl_Egueb_Document_Http_Request *d = data;
-	Enesim_Stream *s;
+	Efl_Egueb_Document_IO_Data_Request *data = r->data;
 
-	if (ev->url_con != d->conn)
-		return EINA_TRUE;
-
-	s = enesim_stream_buffer_new(eina_binbuf_string_steal(d->data),
-			eina_binbuf_length_get(d->data));
-	egueb_dom_event_io_data_finish(d->ev, s);
-
-	egueb_dom_event_unref(d->ev);
-	eina_binbuf_free(d->data);
-	ecore_con_url_free(d->conn);
-	free(d);
-
-	return EINA_TRUE;
+	/* remove the request */
+	data->thiz->requests = eina_list_remove(data->thiz->requests, r);
+	egueb_dom_event_unref(data->ev);
+	free(data);
 }
 
-static void _efl_egueb_document_io_data_load(Egueb_Dom_String *location,
+static Efl_Egueb_IO_Request_Descriptor _efl_egueb_document_io_data_descriptor = {
+	/* .completion_cb 	= */ _efl_egueb_document_io_data_completion_cb,
+	/* .free_cb 		= */ _efl_egueb_document_io_data_free_cb
+};
+
+/*----------------------------------------------------------------------------*
+ *                         Document go to request                             *
+ *----------------------------------------------------------------------------*/
+static void _efl_egueb_document_go_to_completion_cb(Efl_Egueb_IO_Request *r,
+		Enesim_Stream *s)
+{
+	Efl_Egueb_Document *thiz = r->data;
+	Egueb_Dom_Node *doc = NULL;
+
+	egueb_dom_parser_parse(enesim_stream_ref(s), &doc);
+	if (doc)
+	{
+		INF("Swapping documents");
+		efl_egueb_document_cleanup(thiz);
+		efl_egueb_document_setup(thiz, doc);
+	}
+	/* swap the current doc with the new doc */
+	efl_egueb_io_request_free(r);
+}
+
+static void _efl_egueb_document_go_to_free_cb(Efl_Egueb_IO_Request *r)
+{
+	Efl_Egueb_Document *thiz = r->data;
+	thiz->requests = eina_list_remove(thiz->requests, r);
+}
+
+static Efl_Egueb_IO_Request_Descriptor _efl_egueb_document_go_to_descriptor = {
+	/* .completion_cb 	= */ _efl_egueb_document_go_to_completion_cb,
+	/* .free_cb 		= */ _efl_egueb_document_go_to_free_cb
+};
+
+static void _efl_egueb_document_io_data_load(Efl_Egueb_Document *thiz,
+		Egueb_Dom_String *location,
 		Egueb_Dom_Event *ev)
 {
-	const char *filename;
+	Efl_Egueb_Document_IO_Data_Request *data;
+	Efl_Egueb_IO_Request *request;
 
-	filename = egueb_dom_string_string_get(location);
-	/* check the scheme */
-	if (!strncmp(filename, "file://", 7))
+	data = calloc(1, sizeof(Efl_Egueb_Document_IO_Data_Request));
+	data->thiz = thiz;
+	data->ev = egueb_dom_event_ref(ev);
+
+	request = efl_egueb_io_request_new(location,
+			&_efl_egueb_document_io_data_descriptor,
+			data);
+	if (request)
 	{
-		Enesim_Stream *s;
-
-		s = enesim_stream_file_new(filename + 7, "r");
-		if (s)
-		{
-			DBG("Data '%s' loaded correctly", filename);
-			egueb_dom_event_io_data_finish(ev, s);
-		}
-	}
-	else if (!strncmp(filename, "http://", 7))
-	{
-		Efl_Egueb_Document_Http_Request *data;
-
-		data = calloc(1, sizeof(Efl_Egueb_Document_Http_Request));
-		data->conn = ecore_con_url_new(filename);
-		data->data = eina_binbuf_new();
-		data->ev = egueb_dom_event_ref(ev);
-
-		ecore_event_handler_add(ECORE_CON_EVENT_URL_COMPLETE,
-				_efl_egueb_document_url_completion_cb,
-				data);
-		ecore_event_handler_add(ECORE_CON_EVENT_URL_DATA,
-				_efl_egueb_document_url_data_cb,
-				data);
-		ecore_con_url_get(data->conn);
-	}
-	else
-	{
-		WRN("Unsupported schema '%s'", filename);
+		thiz->requests = eina_list_append(thiz->requests, request);
 	}
 }
 
-static void _efl_egueb_document_io_relative_data_cb(Egueb_Dom_Uri *uri,
+static void _efl_egueb_document_io_relative_data_cb(
+		Efl_Egueb_Document *thiz,
+		Egueb_Dom_Uri *uri,
 		Egueb_Dom_Event *ev)
 {
 	Egueb_Dom_Node *doc;
@@ -156,7 +162,7 @@ static void _efl_egueb_document_io_relative_data_cb(Egueb_Dom_Uri *uri,
 		goto beach;
 	}
 
-	_efl_egueb_document_io_data_load(resolved.location, ev);
+	_efl_egueb_document_io_data_load(thiz, resolved.location, ev);
 	egueb_dom_uri_cleanup(&resolved);
 	egueb_dom_string_unref(location);
 beach:
@@ -164,8 +170,9 @@ beach:
 }
 
 /* the idea is to use async file loading (either http://, file:// etc) */
-static void _efl_egueb_document_io_data_cb(Egueb_Dom_Event *ev, void *data EINA_UNUSED)
+static void _efl_egueb_document_io_data_cb(Egueb_Dom_Event *ev, void *data)
 {
+	Efl_Egueb_Document *thiz = data;
 	Egueb_Dom_Uri uri;
 
 	egueb_dom_event_io_uri_get(ev, &uri);
@@ -176,11 +183,11 @@ static void _efl_egueb_document_io_data_cb(Egueb_Dom_Event *ev, void *data EINA_
 			uri.location), uri.type);
 	if (uri.type == EGUEB_DOM_URI_TYPE_ABSOLUTE)
 	{
-		_efl_egueb_document_io_data_load(uri.location, ev);
+		_efl_egueb_document_io_data_load(thiz, uri.location, ev);
 	}
 	else
 	{
-		_efl_egueb_document_io_relative_data_cb(&uri, ev);
+		_efl_egueb_document_io_relative_data_cb(thiz, &uri, ev);
 	}
 
 has_fragment:
@@ -223,6 +230,46 @@ static void _efl_egueb_document_io_image_cb(Egueb_Dom_Event *ev, void *data EINA
 	enesim_stream_unref(s);
 }
 
+static void _efl_egueb_document_navigation_load(Efl_Egueb_Document *thiz,
+		Egueb_Dom_String *location)
+{
+	Efl_Egueb_IO_Request *request;
+
+	request = efl_egueb_io_request_new(location,
+			&_efl_egueb_document_go_to_descriptor,
+			thiz);
+	if (request)
+	{
+		thiz->requests = eina_list_append(thiz->requests, request);
+	}
+}
+
+static void _efl_egueb_document_navigation_relative_load(Efl_Egueb_Document *thiz,
+		Egueb_Dom_Uri *uri)
+{
+	Egueb_Dom_String *location;
+	Egueb_Dom_Uri resolved;
+
+	location = egueb_dom_document_uri_get(thiz->doc);
+	if (!location)
+	{
+		WRN("No URI set on the document");
+		return;
+	}
+
+	if (!egueb_dom_uri_resolve(uri, location, &resolved))
+	{
+		WRN("Can not resolve the URI");
+		egueb_dom_string_unref(location);
+		goto no_resolve;
+	}
+
+	_efl_egueb_document_navigation_load(thiz, resolved.location);
+	egueb_dom_uri_cleanup(&resolved);
+no_resolve:
+	egueb_dom_string_unref(location);
+}
+
 static void _efl_egueb_document_navigation_go_to_cb(Egueb_Dom_Event *ev, void *data)
 {
 	Efl_Egueb_Document *thiz = data;
@@ -233,15 +280,16 @@ static void _efl_egueb_document_navigation_go_to_cb(Egueb_Dom_Event *ev, void *d
 	if (uri.fragment != NULL)
 		goto has_fragment;
 
-	ERR("Going to '%s' (%d)", egueb_dom_string_string_get(
+	DBG("Going to '%s' (%d)", egueb_dom_string_string_get(
 			uri.location), uri.type);
 	if (uri.type == EGUEB_DOM_URI_TYPE_ABSOLUTE)
 	{
+		_efl_egueb_document_navigation_load(thiz, uri.location);
 	}
 	else
 	{
+		_efl_egueb_document_navigation_relative_load(thiz, &uri);
 	}
-
 has_fragment:
 	egueb_dom_uri_cleanup(&uri);
 }
@@ -404,6 +452,11 @@ void efl_egueb_document_setup(Efl_Egueb_Document *thiz, Egueb_Dom_Node *doc)
 
 void efl_egueb_document_cleanup(Efl_Egueb_Document *thiz)
 {
+	Efl_Egueb_IO_Request *request;
+
+	/* remove every pending request */
+	EINA_LIST_FREE(thiz->requests, request)
+		efl_egueb_io_request_free(request);
 	/* first remove every global object to release any
 	 * reference that blocks the destruction of the document
 	 * like a reference to the document itself

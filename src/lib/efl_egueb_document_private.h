@@ -33,6 +33,7 @@ typedef struct _Efl_Egueb_Document
 	Ecore_Idle_Enterer *idle_enterer;
 	Eina_Hash *scripters;
 
+	Eina_List *requests;
 } Efl_Egueb_Document;
 
 void efl_egueb_document_setup(Efl_Egueb_Document *thiz, Egueb_Dom_Node *doc);

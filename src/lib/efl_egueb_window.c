@@ -177,11 +177,76 @@ static Eina_Bool _efl_egueb_window_damages(Egueb_Dom_Feature *e EINA_UNUSED,
 	return EINA_TRUE;
 }
 
+static void _efl_egueb_window_cleanup(Efl_Egueb_Window *thiz)
+{
+	if (thiz->input)
+		egueb_dom_input_unref(thiz->input);
+	if (thiz->window)
+		egueb_dom_feature_unref(thiz->window);
+	if (thiz->render)
+		egueb_dom_feature_unref(thiz->render);
+	if (thiz->doc)
+		egueb_dom_node_unref(thiz->doc);
+}
+
+static Eina_Bool _efl_egueb_window_setup(Efl_Egueb_Window *thiz, Egueb_Dom_Node *doc)
+{
+	Egueb_Dom_Feature *render;
+	Egueb_Dom_Feature *window;
+	Egueb_Dom_Feature *ui;
+
+	/* check if it is a doc */
+	if (egueb_dom_node_type_get(doc) != EGUEB_DOM_NODE_TYPE_DOCUMENT)
+	{
+		egueb_dom_node_unref(doc);
+		return EINA_FALSE;
+	}
+	/* check it it has the render feature */
+	render = egueb_dom_node_feature_get(doc, EGUEB_DOM_FEATURE_RENDER_NAME, NULL);
+	if (!render)
+	{
+		egueb_dom_node_unref(doc);
+		return EINA_FALSE;
+	}
+
+	window = egueb_dom_node_feature_get(doc, EGUEB_DOM_FEATURE_WINDOW_NAME, NULL);
+	if (!window)
+	{
+		egueb_dom_feature_unref(render);
+		egueb_dom_node_unref(doc);
+		return EINA_FALSE;
+	}
+	thiz->doc = doc;
+	thiz->render = render;
+	thiz->window = window;
+
+	/* optional features */
+	ui = egueb_dom_node_feature_get(thiz->doc,
+			EGUEB_DOM_FEATURE_UI_NAME, NULL);
+	if (ui)
+	{
+		egueb_dom_feature_ui_input_get(ui, &thiz->input);
+		egueb_dom_feature_unref(ui);
+	}
+	return EINA_TRUE;
+}
+
 static Eina_Bool _efl_egueb_window_idle_enterer_cb(void *data)
 {
 	Efl_Egueb_Window *thiz = data;
 
+	/* check that the document has not changed */
+	if (thiz->doc != thiz->edoc.doc)
+	{
+		_efl_egueb_window_cleanup(thiz);
+		if (thiz->edoc.doc)
+			_efl_egueb_window_setup(thiz, egueb_dom_node_ref(thiz->edoc.doc));
+	}
+
 	egueb_dom_document_process(thiz->doc);
+	if (!thiz->render)
+		goto done;
+
 	/* if need to draw, get the damages, and draw */
 	if (thiz->b && thiz->s)
 	{
@@ -206,6 +271,8 @@ static Eina_Bool _efl_egueb_window_idle_enterer_cb(void *data)
 done:
 	return EINA_TRUE;
 }
+
+
 /*============================================================================*
  *                                 Global                                     *
  *============================================================================*/
@@ -225,42 +292,16 @@ Efl_Egueb_Window * efl_egueb_window_new(Egueb_Dom_Node *doc,
 		const Efl_Egueb_Window_Descriptor *d, void *data)
 {
 	Efl_Egueb_Window *thiz;
-	Egueb_Dom_Feature *render;
-	Egueb_Dom_Feature *window;
-	Egueb_Dom_Feature *ui;
 	int cw, ch;
 
 	if (!doc) return NULL;
 
-	/* check if it is a doc */
-	if (egueb_dom_node_type_get(doc) != EGUEB_DOM_NODE_TYPE_DOCUMENT)
-	{
-		egueb_dom_node_unref(doc);
-		return NULL;
-	}
-	/* check it it has the render feature */
-	render = egueb_dom_node_feature_get(doc, EGUEB_DOM_FEATURE_RENDER_NAME, NULL);
-	if (!render)
-	{
-		egueb_dom_node_unref(doc);
-		return NULL;
-	}
-
-	window = egueb_dom_node_feature_get(doc, EGUEB_DOM_FEATURE_WINDOW_NAME, NULL);
-	if (!window)
-	{
-		egueb_dom_feature_unref(render);
-		egueb_dom_node_unref(doc);
-		return NULL;
-	}
-
 	thiz = calloc(1, sizeof(Efl_Egueb_Window));
+	if (!_efl_egueb_window_setup(thiz, doc))
+		return NULL;
 	efl_egueb_document_setup(&thiz->edoc, egueb_dom_node_ref(doc));
 	thiz->desc = d;
 	thiz->data = data;
-	thiz->doc = doc;
-	thiz->render = render;
-	thiz->window = window;
 
 	/* set the content size */
 	egueb_dom_feature_window_content_size_set(thiz->window, w, h);
@@ -287,14 +328,6 @@ Efl_Egueb_Window * efl_egueb_window_new(Egueb_Dom_Node *doc,
 	thiz->x = x;
 	thiz->y = y;
 
-	/* optional features */
-	ui = egueb_dom_node_feature_get(thiz->doc,
-			EGUEB_DOM_FEATURE_UI_NAME, NULL);
-	if (ui)
-	{
-		egueb_dom_feature_ui_input_get(ui, &thiz->input);
-		egueb_dom_feature_unref(ui);
-	}
 	/* register our own idler */
 	thiz->idle_enterer = ecore_idle_enterer_add(_efl_egueb_window_idle_enterer_cb, thiz);
 	/* register the event handlers */
@@ -345,14 +378,7 @@ EAPI void efl_egueb_window_free(Efl_Egueb_Window *thiz)
 	if (thiz->idle_enterer)
 		ecore_idle_enterer_del(thiz->idle_enterer);
 
-	if (thiz->input)
-		egueb_dom_input_unref(thiz->input);
-	if (thiz->window)
-		egueb_dom_feature_unref(thiz->window);
-	if (thiz->render)
-		egueb_dom_feature_unref(thiz->render);
-	if (thiz->doc)
-		egueb_dom_node_unref(thiz->doc);
+	_efl_egueb_window_cleanup(thiz);
 	if (thiz->desc->free)
 		thiz->desc->free(thiz->data);
 	free(thiz);
