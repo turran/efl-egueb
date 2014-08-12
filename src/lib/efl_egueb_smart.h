@@ -29,5 +29,6 @@ EAPI void efl_egueb_smart_fps_set(Evas_Object *o, int fps);
 EAPI Eina_Bool efl_egueb_smart_is_svg(Evas_Object *o);
 EAPI Eina_Bool efl_egueb_smart_svg_setup(Evas_Object *o);
 EAPI void efl_egueb_smart_svg_zoom_and_pan_enable(Evas_Object *o);
+EAPI void efl_egueb_smart_svg_zoom_and_pan_disable(Evas_Object *o);
 
 #endif

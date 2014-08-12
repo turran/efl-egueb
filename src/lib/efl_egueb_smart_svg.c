@@ -32,6 +32,7 @@ typedef struct _Efl_Egueb_Smart_Svg
 	/* properties */
 	Eina_Bool zoom_and_pan;
 	/* private */
+	Evas_Object *obj;
 #if BUILD_EGUEB_SVG
 	Eina_Bool l_down;
 	Evas_Coord l_down_x, l_down_y;
@@ -107,40 +108,36 @@ static void _efl_egueb_smart_svg_mouse_move(void *data, Evas *e EINA_UNUSED,
 {
 	Efl_Egueb_Smart_Svg *thiz = data;
 	Evas_Event_Mouse_Move *ev = event_info;
+	Egueb_Dom_Node *svg;
+	Egueb_Dom_Node *doc;
 
 	/* check if we are dragging */
-	if (thiz->zoom_and_pan)
+	doc = efl_egueb_smart_document_get(obj);
+	svg = egueb_dom_document_document_element_get(doc);
+	if (thiz->l_down)
 	{
-		Egueb_Dom_Node *svg;
-		Egueb_Dom_Node *doc;
+		Egueb_Svg_Point p;
 
-		doc = efl_egueb_smart_document_get(obj);
-		svg = egueb_dom_document_document_element_get(doc);
-		if (thiz->l_down)
-		{
-			Egueb_Svg_Point p;
+		p.x = (ev->cur.canvas.x - thiz->l_down_x);
+		p.y = (ev->cur.canvas.y - thiz->l_down_y);
 
-			p.x = (ev->cur.canvas.x - thiz->l_down_x);
-			p.y = (ev->cur.canvas.y - thiz->l_down_y);
-
-			p.x = thiz->current_translate.x + p.x;
-			p.y = thiz->current_translate.y + p.y;
-			egueb_svg_element_svg_current_translate_set(svg, &p);
-		}
-		if (thiz->r_down)
-		{
-			double scale;
-
-			/* simple distance */
-			scale = ((ev->cur.canvas.x - thiz->r_down_x) + (ev->cur.canvas.y - thiz->r_down_y)) / 2;
-			scale = thiz->current_scale + (scale * 0.01);
-			if (scale < 0)
-				scale = 0;
-			egueb_svg_element_svg_current_scale_set(svg, scale);
-		}
-		egueb_dom_node_unref(svg);
-		egueb_dom_node_unref(doc);
+		p.x = thiz->current_translate.x + p.x;
+		p.y = thiz->current_translate.y + p.y;
+		egueb_svg_element_svg_current_translate_set(svg, &p);
 	}
+	if (thiz->r_down)
+	{
+		double scale;
+
+		/* simple distance */
+		scale = ((ev->cur.canvas.x - thiz->r_down_x) + (ev->cur.canvas.y - thiz->r_down_y)) / 2;
+		scale = thiz->current_scale + (scale * 0.01);
+		if (scale < 0)
+			scale = 0;
+		egueb_svg_element_svg_current_scale_set(svg, scale);
+	}
+	egueb_dom_node_unref(svg);
+	egueb_dom_node_unref(doc);
 }
 #endif
 
@@ -159,8 +156,8 @@ static void _efl_egueb_smart_svg_del(void *data, Evas *e EINA_UNUSED,
  *============================================================================*/
 EAPI Eina_Bool efl_egueb_smart_is_svg(Evas_Object *o)
 {
-	/* get the doc */
-	/* check if the doc feature has the svg mime type */
+	/* TODO get the doc */
+	/* TODO check if the doc feature has the svg mime type */
 	return EINA_TRUE;
 }
 
@@ -172,11 +169,32 @@ EAPI Eina_Bool efl_egueb_smart_svg_setup(Evas_Object *o)
 		return EINA_FALSE;
 	/* add the callback whenever the smart object is deleted */
 	thiz = calloc(1, sizeof(Efl_Egueb_Smart_Svg));
-	thiz->zoom_and_pan = EINA_TRUE;
+	thiz->obj = o;
 
 	evas_object_data_set(o, "svg", thiz);
 	evas_object_event_callback_add(o, EVAS_CALLBACK_DEL,
 			_efl_egueb_smart_svg_del, thiz);
+	_efl_egueb_smart_svg_setup(thiz);
+
+	/* enable the zoom and pan by default */
+	efl_egueb_smart_svg_zoom_and_pan_enable(o);
+	return EINA_TRUE;
+}
+
+EAPI void efl_egueb_smart_svg_zoom_and_pan_enable(Evas_Object *o)
+{
+	Efl_Egueb_Smart_Svg *thiz;
+
+	thiz = evas_object_data_get(o, "svg");
+	if (!thiz)
+	{
+		ERR("Call efl_egueb_smart_svg_setup() first");
+		return;
+	}
+	if (thiz->zoom_and_pan)
+		return;
+
+	thiz->zoom_and_pan = EINA_TRUE;
 	/* TODO add the callback whenever the document has changed */
 #if BUILD_EGUEB_SVG
 	evas_object_event_callback_add(o, EVAS_CALLBACK_MOUSE_DOWN,
@@ -186,13 +204,29 @@ EAPI Eina_Bool efl_egueb_smart_svg_setup(Evas_Object *o)
 	evas_object_event_callback_add(o, EVAS_CALLBACK_MOUSE_MOVE,
 			_efl_egueb_smart_svg_mouse_move, thiz);
 #endif
-	return EINA_TRUE;
 }
 
-EAPI void efl_egueb_smart_svg_zoom_and_pan_enable(Evas_Object *o)
+EAPI void efl_egueb_smart_svg_zoom_and_pan_disable(Evas_Object *o)
 {
 	Efl_Egueb_Smart_Svg *thiz;
 
 	thiz = evas_object_data_get(o, "svg");
-	thiz->zoom_and_pan = EINA_TRUE;
+	if (!thiz)
+	{
+		ERR("Call efl_egueb_smart_svg_setup() first");
+		return;
+	}
+	if (!thiz->zoom_and_pan)
+		return;
+
+	thiz->zoom_and_pan = EINA_FALSE;
+	/* TODO add the callback whenever the document has changed */
+#if BUILD_EGUEB_SVG
+	evas_object_event_callback_del_full(o, EVAS_CALLBACK_MOUSE_DOWN,
+			_efl_egueb_smart_svg_mouse_down, thiz);
+	evas_object_event_callback_del_full(o, EVAS_CALLBACK_MOUSE_UP,
+			_efl_egueb_smart_svg_mouse_up, thiz);
+	evas_object_event_callback_del_full(o, EVAS_CALLBACK_MOUSE_MOVE,
+			_efl_egueb_smart_svg_mouse_move, thiz);
+#endif
 }
