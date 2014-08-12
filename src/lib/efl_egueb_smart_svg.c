@@ -41,10 +41,78 @@ typedef struct _Efl_Egueb_Smart_Svg
 	Eina_Bool r_down;
 	Evas_Coord r_down_x, r_down_y;
 	double current_scale;
+
+	Evas_Object *focus_rect;
 #endif
 } Efl_Egueb_Smart_Svg;
 
 #if BUILD_EGUEB_SVG
+static void _efl_egueb_smart_svg_focus_in_cb(Egueb_Dom_Event *ev, void *data)
+{
+	Efl_Egueb_Smart_Svg *thiz = data;
+	Egueb_Dom_Node *target;
+
+	/* add the rectangle object */
+	target = egueb_dom_event_target_get(ev);
+	egueb_dom_node_unref(target);
+
+	/* FIXME the focus code is for testing, it should not place an object
+	 * on top of every other object, it must be part of the smart object
+	 * only
+	 */
+	if (!thiz->focus_rect)
+	{
+		Evas *evas;
+		Evas_Object *o;
+
+		evas = evas_object_evas_get(thiz->obj);
+		o = evas_object_rectangle_add(evas);
+		evas_object_color_set(o, 64, 0, 0, 64);
+		evas_object_move(o, 0, 0);
+		evas_object_resize(o, 128, 128);
+		thiz->focus_rect = o;
+	}
+	/* get the position and size of the object */
+	evas_object_show(thiz->focus_rect);
+}
+
+static void _efl_egueb_smart_svg_focus_out_cb(Egueb_Dom_Event *ev, void *data)
+{
+	Efl_Egueb_Smart_Svg *thiz = data;
+	/* remove the rectangle object */
+	evas_object_hide(thiz->focus_rect);
+} 
+
+static void _efl_egueb_smart_svg_setup(Efl_Egueb_Smart_Svg *thiz)
+{
+	Egueb_Dom_Node *doc;
+
+	/* register the document related events */
+	doc = efl_egueb_smart_document_get(thiz->obj);
+	egueb_dom_node_event_listener_add(doc,
+			EGUEB_DOM_EVENT_FOCUS_IN,
+			_efl_egueb_smart_svg_focus_in_cb, EINA_FALSE, thiz);
+	egueb_dom_node_event_listener_add(doc,
+			EGUEB_DOM_EVENT_FOCUS_OUT,
+			_efl_egueb_smart_svg_focus_out_cb, EINA_FALSE, thiz);
+	egueb_dom_node_unref(doc);
+}
+
+static void _efl_egueb_smart_svg_cleanup(Efl_Egueb_Smart_Svg *thiz)
+{
+	Egueb_Dom_Node *doc;
+
+	/* unregister the document related events */
+	doc = efl_egueb_smart_document_get(thiz->obj);
+	egueb_dom_node_event_listener_remove(doc,
+			EGUEB_DOM_EVENT_FOCUS_IN,
+			_efl_egueb_smart_svg_focus_in_cb, EINA_FALSE, thiz);
+	egueb_dom_node_event_listener_remove(doc,
+			EGUEB_DOM_EVENT_FOCUS_OUT,
+			_efl_egueb_smart_svg_focus_out_cb, EINA_FALSE, thiz);
+	egueb_dom_node_unref(doc);
+}
+
 static void _efl_egueb_smart_svg_mouse_up(void *data, Evas *e EINA_UNUSED,
 		Evas_Object *obj EINA_UNUSED, void *event_info)
 {
@@ -145,7 +213,7 @@ static void _efl_egueb_smart_svg_del(void *data, Evas *e EINA_UNUSED,
 		Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
 	Efl_Egueb_Smart_Svg *thiz = data;
-
+	_efl_egueb_smart_svg_cleanup(thiz);
 	free(thiz);
 }
 /*============================================================================*
