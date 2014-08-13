@@ -49,6 +49,7 @@ typedef struct _Efl_Egueb_Smart_Svg
 #if BUILD_EGUEB_SVG
 static void _efl_egueb_smart_svg_focus_in_cb(Egueb_Dom_Event *ev, void *data)
 {
+#if 0
 	Efl_Egueb_Smart_Svg *thiz = data;
 	Egueb_Dom_Node *target;
 
@@ -74,13 +75,16 @@ static void _efl_egueb_smart_svg_focus_in_cb(Egueb_Dom_Event *ev, void *data)
 	}
 	/* get the position and size of the object */
 	evas_object_show(thiz->focus_rect);
+#endif
 }
 
 static void _efl_egueb_smart_svg_focus_out_cb(Egueb_Dom_Event *ev, void *data)
 {
+#if 0
 	Efl_Egueb_Smart_Svg *thiz = data;
 	/* remove the rectangle object */
 	evas_object_hide(thiz->focus_rect);
+#endif
 } 
 
 static void _efl_egueb_smart_svg_setup(Efl_Egueb_Smart_Svg *thiz)
