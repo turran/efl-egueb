@@ -228,9 +228,18 @@ static void _efl_egueb_smart_svg_del(void *data, Evas *e EINA_UNUSED,
  *============================================================================*/
 EAPI Eina_Bool efl_egueb_smart_is_svg(Evas_Object *o)
 {
-	/* TODO get the doc */
-	/* TODO check if the doc feature has the svg mime type */
-	return EINA_TRUE;
+#if BUILD_EGUEB_SVG
+	Egueb_Dom_Node *doc;
+	Eina_Bool ret;
+
+	doc = efl_egueb_smart_document_get(o);
+	if (!doc) return EINA_FALSE;
+	ret = egueb_svg_is_document(doc);
+	egueb_dom_node_unref(doc);
+	return ret;
+#else
+	return EINA_FALSE;
+#endif
 }
 
 EAPI Eina_Bool efl_egueb_smart_svg_setup(Evas_Object *o)
