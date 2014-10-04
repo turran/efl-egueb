@@ -2,8 +2,11 @@
 # include <config.h>
 #endif
 
+#define _GNU_SOURCE
+
 #include <stdio.h>
 #include <getopt.h>
+#include <unistd.h>
 
 #include <Eina.h>
 #include <Evas.h>
@@ -69,36 +72,6 @@ static void _cb_resize(Ecore_Evas *ee)
 	/* TODO put the controls on the same position */
 }
 
-#if 0
-static void _cb_prev(void *data, Evas *e, Evas_Object *obj, void *event_info)
-{
-	Efl_Svg_Viewer *thiz = data;
-	Eina_List *prev;
-	const char *file;
-
-	prev = eina_list_prev(thiz->current);
-	if (!prev) return;
-	thiz->current = prev;
-	file = prev->data;
-	printf("setting file %s\n", file);
-	efl_egueb_smart_file_set(thiz->svg, file);
-}
-
-static void _cb_next(void *data, Evas *e, Evas_Object *obj, void *event_info)
-{
-	Efl_Svg_Viewer *thiz = data;
-	Eina_List *next;
-	const char *file;
-
-	next = eina_list_next(thiz->current);
-	if (!next) return;
-	thiz->current = next;
-	file = next->data;
-	printf("setting file %s\n", file);
-	efl_egueb_smart_file_set(thiz->svg, file);
-}
-#endif
-
 static void _cb_dir(const char *name, const char *path, void *user_data)
 {
 	Efl_Svg_Smart_Dir_Data *data = user_data;
@@ -125,9 +98,8 @@ int main(int argc, char *argv[])
 	Ecore_Evas *ee;
 	Evas *evas;
 	Evas_Object *o;
-	Eina_List *files = NULL;
-	Eina_List *current;
 	Eina_Bool damages;
+	Eina_Bool free_file = EINA_FALSE;
 	char *short_options = "dhw:e:n:f:";
 	struct option long_options[] = {
 		{ "help", 1, 0, 'h' },
@@ -139,7 +111,7 @@ int main(int argc, char *argv[])
 	};
 	int option;
 	int ret;
-	const char *filename;
+	char *filename;
 	char *engine;
 	int width;
 	int height;
@@ -221,44 +193,27 @@ int main(int argc, char *argv[])
 	if (stat(filename, &st) < 0)
 	{
 		help(argv[0]);
-		return 0;
+		goto done;
 	}
-
-	if (S_ISDIR(st.st_mode))
+	/* sanitize the filename */
+	if (*filename != '.' && *filename != '/')
 	{
-		Efl_Svg_Smart_Dir_Data data;
+		char *wd;
 
-		data.files = NULL;
-		data.path = filename;
-		/* iterate over the svg files on the directory */
-		eina_file_dir_list(filename, EINA_FALSE, _cb_dir, &data);
-		files = data.files;
-		current = files;
-	}
-	else
-	{
-		/* TODO split the path and get every svg on such dir */
-		/* make as current the filename selected */
-		files = eina_list_append(files, strdup(filename));
-		current = files;
+		wd = get_current_dir_name();
+		if (asprintf(&filename, "%s/%s", wd, filename) < 0)
+			goto done;
+		free_file = EINA_TRUE;
 	}
 
-	if (!files)
-	{
-		printf("No SVG files found\n");
-		help(argv[0]);
-		return 0;
-	}
-
-	s = enesim_stream_file_new(files->data, "r");
+	s = enesim_stream_file_new(filename, "r");
 	if (!s)
 	{
-		printf("Impossible to create the file stream\n");
-		return 0;
+		printf("Failed to read file %s\n", filename);
+		help(argv[0]);
+		goto read_error;
 	}
 
-	thiz.files = files;
-	thiz.current = current;
 	thiz.width = width;
 	thiz.height = height;
 
@@ -304,6 +259,9 @@ shutdown_esvg:
 	efl_egueb_shutdown();
 shutdown_ecore_evas:
 	ecore_evas_shutdown();
-
+read_error:
+	if (free_file)
+		free(filename);
+done:
 	return -1;
 }

@@ -1,5 +1,12 @@
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
+
+#define _GNU_SOURCE
+
 #include <stdio.h>
 #include <getopt.h>
+#include <unistd.h>
 
 #include "Efl_Egueb.h"
 
@@ -27,6 +34,7 @@ int main(int argc, char *argv[])
 	Efl_Egueb_Window *w;
 	Egueb_Dom_Node *doc = NULL;
 	Enesim_Stream *s;
+	Eina_Bool free_file = EINA_FALSE;
 	char *short_options = "hw:e:";
 	struct option long_options[] = {
 		{ "help", 1, 0, 'h' },
@@ -35,7 +43,7 @@ int main(int argc, char *argv[])
 	};
 	int option;
 	int ret;
-	const char *filename;
+	char *filename;
 	int width;
 	int height;
 	int fps;
@@ -82,14 +90,25 @@ int main(int argc, char *argv[])
 	{
 		printf("No SVG files found\n");
 		help(argv[0]);
-		return 0;
+		goto done;
 	}
+	/* sanitize the filename */
+	if (*filename != '.' && *filename != '/')
+	{
+		char *wd;
+
+		wd = get_current_dir_name();
+		if (asprintf(&filename, "%s/%s", wd, filename) < 0)
+			goto done;
+		free_file = EINA_TRUE;
+	}
+
 	s = enesim_stream_file_new(filename, "rb");
 	if (!s)
 	{
 		printf("Failed to read file %s\n", filename);
 		help(argv[0]);
-		return 0;
+		goto read_error;
 	}
 	egueb_dom_parser_parse(s, &doc);
 
@@ -111,6 +130,10 @@ int main(int argc, char *argv[])
 shutdown_egueb_svg:
 	efl_egueb_shutdown();
 efl_egueb_failed:
+read_error:
+	if (free_file)
+		free(filename);
+done:
 	return -1;
 }
 
