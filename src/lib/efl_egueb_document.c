@@ -264,6 +264,9 @@ static void _efl_egueb_document_navigation_relative_load(Efl_Egueb_Document *thi
 		goto no_resolve;
 	}
 
+	DBG("Resolving relative uri for document '%s' at '%s'",
+			egueb_dom_string_string_get(location),
+			egueb_dom_string_string_get(resolved.location));
 	_efl_egueb_document_navigation_load(thiz, resolved.location);
 	egueb_dom_uri_cleanup(&resolved);
 no_resolve:

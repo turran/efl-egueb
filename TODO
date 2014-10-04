@@ -1,0 +1,2 @@
++ Make sure that passing a file without a patch is correctly resolved
+  using the working dir.

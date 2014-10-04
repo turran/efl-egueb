@@ -108,6 +108,7 @@ Efl_Egueb_IO_Request * efl_egueb_io_request_new(Egueb_Dom_String *location,
 		WRN("Unsupported schema '%s'", filename);
 		free(thiz);
 		thiz = NULL;
+		goto done;
 	}
 
 	if (thiz->destroy)
@@ -115,7 +116,7 @@ Efl_Egueb_IO_Request * efl_egueb_io_request_new(Egueb_Dom_String *location,
 		efl_egueb_io_request_free(thiz);
 		return NULL;		
 	}
-
+done:
 	return thiz;
 }
 
