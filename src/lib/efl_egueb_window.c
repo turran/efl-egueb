@@ -177,7 +177,7 @@ static Eina_Bool _efl_egueb_window_damages(Egueb_Dom_Feature *e EINA_UNUSED,
 	return EINA_TRUE;
 }
 
-static void _efl_egueb_window_cleanup(Efl_Egueb_Window *thiz)
+static void _efl_egueb_window_topmost_cleanup(Efl_Egueb_Window *thiz)
 {
 	if (thiz->input)
 		egueb_dom_input_unref(thiz->input);
@@ -185,50 +185,90 @@ static void _efl_egueb_window_cleanup(Efl_Egueb_Window *thiz)
 		egueb_dom_feature_unref(thiz->window);
 	if (thiz->render)
 		egueb_dom_feature_unref(thiz->render);
-	if (thiz->doc)
-		egueb_dom_node_unref(thiz->doc);
+	if (thiz->topmost)
+		egueb_dom_node_unref(thiz->topmost);
 }
 
-static Eina_Bool _efl_egueb_window_setup(Efl_Egueb_Window *thiz, Egueb_Dom_Node *doc)
+static Eina_Bool _efl_egueb_window_topmost_setup(Efl_Egueb_Window *thiz,
+		Egueb_Dom_Node *topmost)
 {
 	Egueb_Dom_Feature *render;
 	Egueb_Dom_Feature *window;
 	Egueb_Dom_Feature *ui;
+	Eina_Bool ret = EINA_FALSE;
 
-	/* check if it is a doc */
-	if (egueb_dom_node_type_get(doc) != EGUEB_DOM_NODE_TYPE_DOCUMENT)
-	{
-		egueb_dom_node_unref(doc);
-		return EINA_FALSE;
-	}
 	/* check it it has the render feature */
-	render = egueb_dom_node_feature_get(doc, EGUEB_DOM_FEATURE_RENDER_NAME, NULL);
+	render = egueb_dom_node_feature_get(topmost, EGUEB_DOM_FEATURE_RENDER_NAME, NULL);
 	if (!render)
 	{
-		egueb_dom_node_unref(doc);
-		return EINA_FALSE;
+		ERR("The topmost element does not have a render feature");
+		goto no_render;
 	}
 
-	window = egueb_dom_node_feature_get(doc, EGUEB_DOM_FEATURE_WINDOW_NAME, NULL);
+	window = egueb_dom_node_feature_get(topmost, EGUEB_DOM_FEATURE_WINDOW_NAME, NULL);
 	if (!window)
 	{
-		egueb_dom_feature_unref(render);
-		egueb_dom_node_unref(doc);
-		return EINA_FALSE;
+		ERR("The topmost element does not have a window feature");
+		goto no_window;
 	}
-	thiz->doc = doc;
-	thiz->render = render;
-	thiz->window = window;
+
+	thiz->topmost = egueb_dom_node_ref(topmost);
+	thiz->render = egueb_dom_feature_ref(render);
+	thiz->window = egueb_dom_feature_ref(window);
 
 	/* optional features */
-	ui = egueb_dom_node_feature_get(thiz->doc,
+	ui = egueb_dom_node_feature_get(topmost,
 			EGUEB_DOM_FEATURE_UI_NAME, NULL);
 	if (ui)
 	{
 		egueb_dom_feature_ui_input_get(ui, &thiz->input);
 		egueb_dom_feature_unref(ui);
 	}
-	return EINA_TRUE;
+	ret = EINA_TRUE;
+
+	egueb_dom_feature_unref(window);
+no_window:
+	egueb_dom_feature_unref(render);
+no_render:
+	return ret;
+}
+
+static void _efl_egueb_window_cleanup(Efl_Egueb_Window *thiz)
+{
+	_efl_egueb_window_topmost_cleanup(thiz);
+	if (thiz->doc)
+		egueb_dom_node_unref(thiz->doc);
+}
+
+static Eina_Bool _efl_egueb_window_setup(Efl_Egueb_Window *thiz, Egueb_Dom_Node *doc)
+{
+	Egueb_Dom_Node *topmost;
+	Eina_Bool ret = EINA_FALSE;
+
+	/* check if it is a doc */
+	if (egueb_dom_node_type_get(doc) != EGUEB_DOM_NODE_TYPE_DOCUMENT)
+	{
+		ERR("The provided node is not a document");
+		goto no_doc;
+	}
+
+	topmost = egueb_dom_document_document_element_get(doc);
+	if (!topmost)
+	{
+		ERR("No topmost element found");
+		goto no_doc;
+	}
+
+	if (!_efl_egueb_window_topmost_setup(thiz, topmost))
+		goto no_setup;
+
+	thiz->doc = egueb_dom_node_ref(doc);
+	ret = EINA_TRUE;
+no_setup:
+	egueb_dom_node_unref(topmost);
+no_doc:
+	egueb_dom_node_unref(doc);
+	return ret;
 }
 
 static Eina_Bool _efl_egueb_window_idle_enterer_cb(void *data)
@@ -297,9 +337,9 @@ Efl_Egueb_Window * efl_egueb_window_new(Egueb_Dom_Node *doc,
 	if (!doc) return NULL;
 
 	thiz = calloc(1, sizeof(Efl_Egueb_Window));
-	if (!_efl_egueb_window_setup(thiz, doc))
+	if (!_efl_egueb_window_setup(thiz, egueb_dom_node_ref(doc)))
 		return NULL;
-	efl_egueb_document_setup(&thiz->edoc, egueb_dom_node_ref(doc));
+	efl_egueb_document_setup(&thiz->edoc, doc);
 	thiz->desc = d;
 	thiz->data = data;
 

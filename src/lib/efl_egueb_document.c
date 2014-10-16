@@ -48,6 +48,7 @@ typedef struct _Efl_Egueb_Document_IO_Data_Request
 	Efl_Egueb_Document *thiz;
 	Egueb_Dom_Event *ev;
 } Efl_Egueb_Document_IO_Data_Request;
+
 /*----------------------------------------------------------------------------*
  *                            Data event request                              *
  *----------------------------------------------------------------------------*/
@@ -378,28 +379,29 @@ static Eina_Bool _efl_egueb_document_idle_enterer_cb(void *data)
 	/* process the enesim image context */
 	if (thiz->io)
 	{
+		/* TODO we need a way to actually make the app sleep, this
+		 * approach will only dispatch an image loading whenever
+		 * the application has waken up, but will not wake up the
+		 * application if the image has been loaded
+		 */
 		enesim_image_dispatch();
 	}
 	return EINA_TRUE;
 }
-/*----------------------------------------------------------------------------*
- *                             Window descriptor                              *
- *----------------------------------------------------------------------------*/
-/*============================================================================*
- *                                 Global                                     *
- *============================================================================*/
-void efl_egueb_document_setup(Efl_Egueb_Document *thiz, Egueb_Dom_Node *doc)
+
+
+static void _efl_egueb_document_topmost_setup(Efl_Egueb_Document *thiz,
+		Egueb_Dom_Node *topmost)
 {
-	thiz->doc = doc;
 	/* check for IO feature */
-	thiz->io = egueb_dom_node_feature_get(thiz->doc,
+	thiz->io = egueb_dom_node_feature_get(topmost,
 			EGUEB_DOM_FEATURE_IO_NAME, NULL);
 	if (thiz->io)
 	{
-		egueb_dom_node_event_listener_add(thiz->doc,
+		egueb_dom_node_event_listener_add(topmost,
 				EGUEB_DOM_EVENT_IO_DATA,
 				_efl_egueb_document_io_data_cb, EINA_TRUE, thiz);
-		egueb_dom_node_event_listener_add(thiz->doc,
+		egueb_dom_node_event_listener_add(topmost,
 				EGUEB_DOM_EVENT_IO_IMAGE,
 				_efl_egueb_document_io_image_cb, EINA_TRUE, thiz);
 		thiz->idle_enterer = ecore_idle_enterer_add(
@@ -409,11 +411,11 @@ void efl_egueb_document_setup(Efl_Egueb_Document *thiz, Egueb_Dom_Node *doc)
 	}
 
 	/* check the navigation feature */
-	thiz->navigation = egueb_dom_node_feature_get(thiz->doc,
+	thiz->navigation = egueb_dom_node_feature_get(topmost,
 			EGUEB_DOM_FEATURE_NAVIGATION_NAME, NULL);
 	if (thiz->navigation)
 	{
-		egueb_dom_node_event_listener_add(thiz->doc,
+		egueb_dom_node_event_listener_add(topmost,
 				EGUEB_DOM_EVENT_NAVIGATION_GO_TO,
 				_efl_egueb_document_navigation_go_to_cb,
 				EINA_TRUE, thiz);
@@ -421,7 +423,7 @@ void efl_egueb_document_setup(Efl_Egueb_Document *thiz, Egueb_Dom_Node *doc)
 
 #if BUILD_EGUEB_SMIL
 	/* check for animation feature */
-	thiz->animation = egueb_dom_node_feature_get(thiz->doc,
+	thiz->animation = egueb_dom_node_feature_get(topmost,
 			EGUEB_SMIL_FEATURE_ANIMATION_NAME, NULL);
 	/* register our own timer for the anim in case we have one */
 	if (thiz->animation)
@@ -434,26 +436,27 @@ void efl_egueb_document_setup(Efl_Egueb_Document *thiz, Egueb_Dom_Node *doc)
 	}
 #endif
 	/* check for the script feature */
-	thiz->script = egueb_dom_node_feature_get(doc, EGUEB_DOM_FEATURE_SCRIPT_NAME, NULL);
+	thiz->script = egueb_dom_node_feature_get(topmost, EGUEB_DOM_FEATURE_SCRIPT_NAME, NULL);
 	if (thiz->script)
 	{
-		egueb_dom_node_event_listener_add(thiz->doc,
+		egueb_dom_node_event_listener_add(topmost,
 				EGUEB_DOM_EVENT_SCRIPT_SCRIPTER,
 				_efl_egueb_document_script_scripter_cb, EINA_TRUE, thiz);
 		thiz->scripters = eina_hash_string_superfast_new(EINA_FREE_CB(egueb_dom_scripter_free));
 	}
 
 	/* check for the multimedia feature */
-	thiz->multimedia = egueb_dom_node_feature_get(doc, EGUEB_DOM_FEATURE_MULTIMEDIA_NAME, NULL);
+	thiz->multimedia = egueb_dom_node_feature_get(topmost, EGUEB_DOM_FEATURE_MULTIMEDIA_NAME, NULL);
 	if (thiz->multimedia)
 	{
-		egueb_dom_node_event_listener_add(thiz->doc,
+		egueb_dom_node_event_listener_add(topmost,
 				EGUEB_DOM_EVENT_MULTIMEDIA_VIDEO,
 				_efl_egueb_document_multimedia_video_cb, EINA_TRUE, thiz);
 	}
+	thiz->topmost = topmost;
 }
 
-void efl_egueb_document_cleanup(Efl_Egueb_Document *thiz)
+static void _efl_egueb_document_topmost_cleanup(Efl_Egueb_Document *thiz)
 {
 	Efl_Egueb_IO_Request *request;
 
@@ -479,11 +482,11 @@ void efl_egueb_document_cleanup(Efl_Egueb_Document *thiz)
 
 	if (thiz->io)
 	{
-		egueb_dom_node_event_listener_remove(thiz->doc,
+		egueb_dom_node_event_listener_remove(thiz->topmost,
 				EGUEB_DOM_EVENT_IO_DATA,
 				_efl_egueb_document_io_data_cb,
 				EINA_TRUE, thiz);
-		egueb_dom_node_event_listener_remove(thiz->doc,
+		egueb_dom_node_event_listener_remove(thiz->topmost,
 				EGUEB_DOM_EVENT_IO_IMAGE,
 				_efl_egueb_document_io_image_cb,
 				EINA_TRUE, thiz);
@@ -494,16 +497,10 @@ void efl_egueb_document_cleanup(Efl_Egueb_Document *thiz)
 
 	if (thiz->navigation)
 	{
-		egueb_dom_node_event_listener_remove(thiz->doc,
+		egueb_dom_node_event_listener_remove(thiz->topmost,
 				EGUEB_DOM_EVENT_NAVIGATION_GO_TO,
 				_efl_egueb_document_navigation_go_to_cb,
 				EINA_TRUE, thiz);
-	}
-
-	if (thiz->doc)
-	{
-		egueb_dom_node_unref(thiz->doc);
-		thiz->doc = NULL;
 	}
 
 #if BUILD_EGUEB_SMIL
@@ -519,6 +516,28 @@ void efl_egueb_document_cleanup(Efl_Egueb_Document *thiz)
 	}
 	if (thiz->multimedia)
 		egueb_dom_feature_unref(thiz->multimedia);
+
+	egueb_dom_node_unref(thiz->topmost);
+	thiz->topmost = NULL;
+}
+
+/*============================================================================*
+ *                                 Global                                     *
+ *============================================================================*/
+void efl_egueb_document_setup(Efl_Egueb_Document *thiz, Egueb_Dom_Node *doc)
+{
+	Egueb_Dom_Node *topmost;
+
+	topmost = egueb_dom_document_document_element_get(doc);
+	_efl_egueb_document_topmost_setup(thiz, topmost);
+	thiz->doc = doc;
+}
+
+void efl_egueb_document_cleanup(Efl_Egueb_Document *thiz)
+{
+	_efl_egueb_document_topmost_cleanup(thiz);
+	egueb_dom_node_unref(thiz->doc);
+	thiz->doc = NULL;
 }
 
 void efl_egueb_document_fps_set(Efl_Egueb_Document *thiz, int fps)

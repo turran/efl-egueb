@@ -36,6 +36,7 @@ struct _Efl_Egueb_Window
 {
 	Efl_Egueb_Document edoc;
 	Egueb_Dom_Node *doc;
+	Egueb_Dom_Node *topmost;
 	Egueb_Dom_Feature *render;
 	Egueb_Dom_Feature *window;
 	Egueb_Dom_Input *input;

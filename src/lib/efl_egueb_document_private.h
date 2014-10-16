@@ -21,6 +21,7 @@
 typedef struct _Efl_Egueb_Document
 {
 	Egueb_Dom_Node *doc;
+	Egueb_Dom_Node *topmost;
 	Egueb_Dom_Feature *io;
 	Egueb_Dom_Feature *script;
 	Egueb_Dom_Feature *multimedia;

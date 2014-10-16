@@ -62,6 +62,7 @@ typedef struct _Efl_Egueb_Smart
 	Evas_Object *img;
 	Evas_Object *img_clip;
 
+	Egueb_Dom_Node *topmost;
 	Egueb_Dom_Feature *render;
 	Egueb_Dom_Feature *window;
 	Egueb_Dom_Feature *animation;
@@ -352,39 +353,62 @@ static Eina_Bool _efl_egueb_smart_surface_reconfigure(Efl_Egueb_Smart *thiz)
 }
 
 
-static void _efl_egueb_smart_setup(Efl_Egueb_Smart *thiz, Egueb_Dom_Node *doc)
+static Eina_Bool _efl_egueb_smart_topmost_setup(Efl_Egueb_Smart *thiz,
+		Egueb_Dom_Node *topmost)
 {
+	Egueb_Dom_Feature *window;
+	Egueb_Dom_Feature *render;
 	Egueb_Dom_Feature *ui;
+	Eina_Bool ret = EINA_FALSE;
 
-	thiz->doc = doc;
 	/* get the features */
-	thiz->render = egueb_dom_node_feature_get(thiz->doc,
+	render = egueb_dom_node_feature_get(topmost,
 			EGUEB_DOM_FEATURE_RENDER_NAME, NULL);
-	if (!thiz->render)
-	{
-		egueb_dom_node_unref(thiz->doc);
-		thiz->doc = NULL;
-		return;
-	}
-	thiz->window = egueb_dom_node_feature_get(thiz->doc,
+	if (!render)
+		goto done;
+	window = egueb_dom_node_feature_get(topmost,
 			EGUEB_DOM_FEATURE_WINDOW_NAME, NULL);
-	if (!thiz->window)
-	{
-		egueb_dom_feature_unref(thiz->render);
-		thiz->render = NULL;
+	if (!window)
+		goto no_window;
 
-		egueb_dom_node_unref(thiz->doc);
-		thiz->doc = NULL;
-		return;
-	}
-
-	ui = egueb_dom_node_feature_get(thiz->doc,
+	ui = egueb_dom_node_feature_get(topmost,
 			EGUEB_DOM_FEATURE_UI_NAME, NULL);
 	if (ui)
 	{
 		egueb_dom_feature_ui_input_get(ui, &thiz->input);
 		egueb_dom_feature_unref(ui);
 	}
+
+	thiz->topmost = egueb_dom_node_ref(topmost);
+	thiz->window = egueb_dom_feature_ref(window);
+	thiz->render = egueb_dom_feature_ref(render);
+	ret = EINA_TRUE;
+
+	egueb_dom_feature_unref(window);
+no_window:
+	egueb_dom_feature_unref(render);
+done:
+	egueb_dom_node_unref(topmost);
+	return ret;
+}
+
+static void _efl_egueb_smart_setup(Efl_Egueb_Smart *thiz, Egueb_Dom_Node *doc)
+{
+	Egueb_Dom_Node *topmost;
+
+	topmost = egueb_dom_document_document_element_get(doc);
+	if (!topmost)
+	{
+		ERR("No topmost element found");
+		return;
+	}
+	if (!_efl_egueb_smart_topmost_setup(thiz, topmost))
+	{
+		ERR("Failed to setup the topmost element");
+		return;
+	}
+
+	thiz->doc = doc;
 }
 
 static void _efl_egueb_smart_setup_full(Efl_Egueb_Smart *thiz, Egueb_Dom_Node *doc)
@@ -395,6 +419,7 @@ static void _efl_egueb_smart_setup_full(Efl_Egueb_Smart *thiz, Egueb_Dom_Node *d
 
 static void _efl_egueb_smart_cleanup(Efl_Egueb_Smart *thiz)
 {
+	/* TODO remove the event handlers */
 	if (thiz->input)
 	{
 		egueb_dom_input_unref(thiz->input);
@@ -418,17 +443,22 @@ static void _efl_egueb_smart_cleanup(Efl_Egueb_Smart *thiz)
 		egueb_dom_feature_unref(thiz->animation);
 		thiz->animation = NULL;
 	}
+	if (thiz->topmost)
+	{
+		egueb_dom_node_unref(thiz->topmost);
+		thiz->topmost = NULL;
+	}
+	if (thiz->doc)
+	{
+		egueb_dom_node_unref(thiz->doc);
+		thiz->doc = NULL;
+	}
 }
 
 static void _efl_egueb_smart_cleanup_full(Efl_Egueb_Smart *thiz)
 {
+	efl_egueb_document_cleanup(&thiz->edoc);
 	_efl_egueb_smart_cleanup(thiz);
-	if (thiz->doc)
-	{
-		efl_egueb_document_cleanup(&thiz->edoc);
-		egueb_dom_node_unref(thiz->doc);
-		thiz->doc = NULL;
-	}
 }
 
 /* The reason to create another idler is because evas does not allow to hook
@@ -448,7 +478,7 @@ static Eina_Bool _efl_egueb_smart_idler_cb(void *data)
 	double draw_start, draw_end;
 	double process_start, process_end;
 
-	/* check if we dont have to jump to another file */
+	/* check if we haven't jumped to another file */
 	if (thiz->doc != thiz->edoc.doc)
 	{
 		_efl_egueb_smart_cleanup(thiz);
@@ -506,6 +536,9 @@ draw:
 		goto no_surface;
 
 	_efl_egueb_smart_damage_clear(thiz);
+	if (!thiz->render)
+		goto no_render;
+
 	egueb_dom_feature_render_damages_get(thiz->render, thiz->s, _efl_egueb_smart_damages, thiz);
 	if (!thiz->damage_rectangles) goto done;
 
@@ -539,6 +572,7 @@ no_surface:
 		free(r);
 	}
 	thiz->damage_rectangles = NULL;
+no_render:
 	/* TODO mark evas to pick again the damaged pixels not the whole surface */
 #if 0
 	evas_object_image_size_get(thiz->img, &iw, &ih);
@@ -658,7 +692,6 @@ static void _efl_egueb_smart_del(Evas_Object *obj)
 
 	thiz = evas_object_smart_data_get(obj);
 	efl_egueb_smart_document_set(obj, NULL);
-	egueb_dom_node_unref(thiz->doc);
 	/* the idler */
 	ecore_idle_enterer_del(thiz->idler);
 	/* TODO the gl_surface */
