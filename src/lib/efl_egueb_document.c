@@ -25,8 +25,8 @@
 #include <Egueb_Js_Sm.h>
 #endif
 
-#if BUILD_GST_EGUEB
-#include <Gst_Egueb.h>
+#if BUILD_EGUEB_VIDEO
+#include <Egueb_Video.h>
 #endif
 
 #if BUILD_EGUEB_SMIL
@@ -355,8 +355,8 @@ static void _efl_egueb_document_multimedia_video_cb(Egueb_Dom_Event *ev, void *d
 
 	n = egueb_dom_event_target_get(ev);
 	r = egueb_dom_event_multimedia_video_renderer_get(ev);
-#if BUILD_GST_EGUEB
-	vp = gst_egueb_video_provider_new(NULL, r, n);
+#if BUILD_EGUEB_VIDEO
+	vp = egueb_video_provider_new(NULL, r, n);
 #endif
 	egueb_dom_event_multimedia_video_provider_set(ev, vp);
 	egueb_dom_node_unref(n);

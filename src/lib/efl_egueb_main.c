@@ -22,8 +22,8 @@
 #include <Egueb_Js_Sm.h>
 #endif
 
-#if BUILD_GST_EGUEB
-#include <Gst_Egueb.h>
+#if BUILD_EGUEB_VIDEO
+#include <Egueb_Video.h>
 #endif
 
 #if BUILD_EGUEB_SMIL
@@ -51,8 +51,8 @@ EAPI int efl_egueb_init(void)
 #if BUILD_EGUEB_JS_SM
 	egueb_js_sm_init();
 #endif
-#if BUILD_GST_EGUEB
-	gst_egueb_init();
+#if BUILD_EGUEB_VIDEO
+	egueb_video_init();
 #endif
 	efl_egueb_log = eina_log_domain_register("efl_egueb", EINA_COLOR_BLUE);
 	return _init;
@@ -66,8 +66,8 @@ EAPI int efl_egueb_shutdown(void)
 #if BUILD_EGUEB_JS_SM
 	egueb_js_sm_shutdown();
 #endif
-#if BUILD_GST_EGUEB
-	gst_egueb_shutdown();
+#if BUILD_EGUEB_VIDEO
+	egueb_video_shutdown();
 #endif
 #if BUILD_EGUEB_SMIL
 	egueb_smil_shutdown();

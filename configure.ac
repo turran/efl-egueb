@@ -178,29 +178,29 @@ fi
 AM_CONDITIONAL([BUILD_EGUEB_JS_SM], [test "x${build_egueb_js_sm}" = "xyes"])
 
 ### GStreamer based video provider
-AC_ARG_ENABLE([gst-egueb], [AS_HELP_STRING([--enable-gst-egueb], [Enable GStreamer based video provider])],
+AC_ARG_ENABLE([egueb-video], [AS_HELP_STRING([--enable-egueb-video], [Enable GStreamer based video provider])],
   [
     if test "x$enableval" = "xyes" ; then
-       want_gst_egueb="yes"
+       want_egueb_video="yes"
     else
-       want_gst_egueb="no"
+       want_egueb_video="no"
     fi
   ],
-  [want_gst_egueb="yes"]
+  [want_egueb_video="yes"]
 )
 
-PKG_CHECK_MODULES([GST_EGUEB], [gst-egueb], [have_gst_egueb="yes"], [have_gst_egueb="no"])
-build_gst_egueb="no"
+PKG_CHECK_MODULES([EGUEB_VIDEO], [egueb-video], [have_egueb_video="yes"], [have_egueb_video="no"])
+build_egueb_video="no"
 
-if test "x${have_gst_egueb}" = "xyes" -a "x${want_gst_egueb}" = "xyes"; then
-  build_gst_egueb="yes"
-  requirements_pc="${requirements_pc} gst-egueb"
+if test "x${have_egueb_video}" = "xyes" -a "x${want_egueb_video}" = "xyes"; then
+  build_egueb_video="yes"
+  requirements_pc="${requirements_pc} egueb-video"
 fi
 
-if test "x${build_gst_egueb}" = "xyes"; then
-  AC_DEFINE([BUILD_GST_EGUEB], [1], [Have support for gst_egueb])
+if test "x${build_egueb_video}" = "xyes"; then
+  AC_DEFINE([BUILD_EGUEB_VIDEO], [1], [Have support for egueb_video])
 fi
-AM_CONDITIONAL([BUILD_GST_EGUEB], [test "x${build_gst_egueb}" = "xyes"])
+AM_CONDITIONAL([BUILD_EGUEB_VIDEO], [test "x${build_egueb_video}" = "xyes"])
 
 ### Checks for header files
 
@@ -250,8 +250,7 @@ echo "  Window support:"
 echo "    Ecore X.................................: ${build_ecore_x}"
 echo "  Scripting support:"
 echo "    JavaScript (SpiderMonkey)...............: ${build_egueb_js_sm}"
-echo "  Video provider support:"
-echo "    GStreamer...............................: ${build_gst_egueb}"
+echo "  Video provider support:...................: ${build_egueb_video}"
 echo
 echo "Compilation.................................: make (or gmake)"
 echo "  CPPFLAGS..................................: $CPPFLAGS"
