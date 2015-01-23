@@ -22,6 +22,8 @@ typedef struct _Efl_Egueb_Window Efl_Egueb_Window;
 
 EAPI Efl_Egueb_Window * efl_egueb_window_auto_new(Egueb_Dom_Node *doc,
 		int x, int y, int w, int h);
+EAPI void efl_egueb_window_color_set(Efl_Egueb_Window *thiz,
+		Enesim_Color color);
 EAPI void efl_egueb_window_free(Efl_Egueb_Window *thiz);
 
 #endif /*_EFL_EGUEB_WINDOW_H*/

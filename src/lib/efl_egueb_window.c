@@ -296,16 +296,24 @@ static Eina_Bool _efl_egueb_window_idle_enterer_cb(void *data)
 				_efl_egueb_window_damages, thiz);
 		if (!thiz->damages) goto done;
 
-		egueb_dom_feature_render_draw_list(thiz->render, thiz->s,
+		enesim_renderer_draw_list(thiz->background, thiz->s,
 				ENESIM_ROP_FILL, thiz->damages, 0, 0, NULL);
+		egueb_dom_feature_render_draw_list(thiz->render, thiz->s,
+				ENESIM_ROP_BLEND, thiz->damages, 0, 0, NULL);
 		/* convert */
 		enesim_converter_surface(thiz->s, thiz->b);
 		if (!thiz->desc->output_update)
-			goto done;
-		EINA_LIST_FREE(thiz->damages, r)
 		{
-			thiz->desc->output_update(thiz->data, r);
-			free(r);
+			EINA_LIST_FREE(thiz->damages, r)
+				free(r);
+		}
+		else
+		{
+			EINA_LIST_FREE(thiz->damages, r)
+			{
+				thiz->desc->output_update(thiz->data, r);
+				free(r);
+			}
 		}
 	}
 done:
@@ -388,6 +396,10 @@ Efl_Egueb_Window * efl_egueb_window_new(Egueb_Dom_Node *doc,
 	thiz->handlers[7] = ecore_event_handler_add(ECORE_EVENT_MOUSE_OUT,
 			_efl_egueb_window_mouse_out, thiz);
 
+	/* create the background renderer */
+	thiz->background = enesim_renderer_background_new();
+	enesim_renderer_background_color_set(thiz->background, 0xffffffff);
+
 	return thiz;
 }
 
@@ -421,5 +433,13 @@ EAPI void efl_egueb_window_free(Efl_Egueb_Window *thiz)
 	_efl_egueb_window_cleanup(thiz);
 	if (thiz->desc->free)
 		thiz->desc->free(thiz->data);
+
+	enesim_renderer_unref(thiz->background);
 	free(thiz);
+}
+
+EAPI void efl_egueb_window_color_set(Efl_Egueb_Window *thiz,
+		Enesim_Color color)
+{
+	enesim_renderer_background_color_set(thiz->background, color);
 }

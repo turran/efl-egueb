@@ -35,6 +35,7 @@ typedef struct _Efl_Egueb_Window_Descriptor
 struct _Efl_Egueb_Window
 {
 	Efl_Egueb_Document edoc;
+	Enesim_Renderer *background;
 	Egueb_Dom_Node *doc;
 	Egueb_Dom_Node *topmost;
 	Egueb_Dom_Feature *render;
