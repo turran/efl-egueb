@@ -18,8 +18,8 @@
 #include "efl_egueb_private.h"
 #include "efl_egueb_main.h"
 
-#if BUILD_EGUEB_JS_SM
-#include <Egueb_Js_Sm.h>
+#if BUILD_EGUEB_SCRIPT
+#include <Egueb_Script.h>
 #endif
 
 #if BUILD_EGUEB_VIDEO
@@ -48,8 +48,8 @@ EAPI int efl_egueb_init(void)
 #if BUILD_EGUEB_SMIL
 	egueb_smil_init();
 #endif
-#if BUILD_EGUEB_JS_SM
-	egueb_js_sm_init();
+#if BUILD_EGUEB_SCRIPT
+	egueb_script_init();
 #endif
 #if BUILD_EGUEB_VIDEO
 	egueb_video_init();
@@ -63,8 +63,8 @@ EAPI int efl_egueb_shutdown(void)
 	if (--_init != 0)
 		return _init;
 	eina_log_domain_unregister(efl_egueb_log);
-#if BUILD_EGUEB_JS_SM
-	egueb_js_sm_shutdown();
+#if BUILD_EGUEB_SCRIPT
+	egueb_script_shutdown();
 #endif
 #if BUILD_EGUEB_VIDEO
 	egueb_video_shutdown();

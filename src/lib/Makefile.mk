@@ -31,9 +31,9 @@ src_lib_libefl_egueb_la_SOURCES += src/lib/efl_egueb_window_x.c
 src_lib_libefl_egueb_la_LIBADD += @EFL_EGUEB_X_LIBS@
 endif
 
-if BUILD_EGUEB_JS_SM
-src_lib_libefl_egueb_la_CPPFLAGS += @EGUEB_JS_SM_CFLAGS@
-src_lib_libefl_egueb_la_LIBADD += @EGUEB_JS_SM_LIBS@
+if BUILD_EGUEB_SCRIPT
+src_lib_libefl_egueb_la_CPPFLAGS += @EGUEB_SCRIPT_CFLAGS@
+src_lib_libefl_egueb_la_LIBADD += @EGUEB_SCRIPT_LIBS@
 endif
 
 if BUILD_EGUEB_VIDEO

@@ -21,8 +21,8 @@
 #include "efl_egueb_document_private.h"
 #include "efl_egueb_io_request_private.h"
 
-#if BUILD_EGUEB_JS_SM
-#include <Egueb_Js_Sm.h>
+#if BUILD_EGUEB_SCRIPT
+#include <Egueb_Script.h>
 #endif
 
 #if BUILD_EGUEB_VIDEO
@@ -328,12 +328,9 @@ static void _efl_egueb_document_script_scripter_cb(Egueb_Dom_Event *ev, void *da
 		goto done;
 	}
 
-#if BUILD_EGUEB_JS_SM
-	if (!strcmp(stype, "application/ecmascript"))
-	{
-		DBG("Creating new scripter for '%s'", stype);
-		scripter = egueb_js_sm_scripter_new();
-	}
+#if BUILD_EGUEB_SCRIPT
+	DBG("Creating new scripter for '%s'", stype);
+	scripter = egueb_script_scripter_new(stype);
 #endif
 	if (scripter)
 	{
@@ -348,17 +345,16 @@ done:
 
 static void _efl_egueb_document_multimedia_video_cb(Egueb_Dom_Event *ev, void *data)
 {
-	Egueb_Dom_Video_Provider *vp = NULL;
+	Egueb_Dom_Media_Provider *vp = NULL;
 	Egueb_Dom_Node *n;
 	Enesim_Renderer *r;
-	const Egueb_Dom_Video_Provider_Notifier *notifier = NULL;
 
 	n = egueb_dom_event_target_get(ev);
 	r = egueb_dom_event_multimedia_video_renderer_get(ev);
 #if BUILD_EGUEB_VIDEO
-	vp = egueb_video_provider_new(NULL, r, n);
+	vp = egueb_video_provider_new(r);
 #endif
-	egueb_dom_event_multimedia_video_provider_set(ev, vp);
+	egueb_dom_event_multimedia_provider_set(ev, vp);
 	egueb_dom_node_unref(n);
 }
 
