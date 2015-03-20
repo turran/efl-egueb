@@ -409,7 +409,7 @@ Efl_Egueb_Window * efl_egueb_window_new(Egueb_Dom_Node *doc,
 EAPI Efl_Egueb_Window * efl_egueb_window_auto_new(Egueb_Dom_Node *doc,
 		int x, int y, int w, int h)
 {
-	Efl_Egueb_Window *thiz;
+	Efl_Egueb_Window *thiz = NULL;
 
 #if BUILD_ECORE_X
 	thiz = efl_egueb_window_x_new(doc, NULL, 0, x, y, w, h);
