@@ -30,7 +30,7 @@ src_lib_libefl_egueb_la_CPPFLAGS += @EFL_EGUEB_X_CFLAGS@
 src_lib_libefl_egueb_la_SOURCES += src/lib/efl_egueb_window_x.c
 src_lib_libefl_egueb_la_LIBADD += @EFL_EGUEB_X_LIBS@
 dist_install_efl_egueb_headers_DATA += \
-Efl_Egueb_X.h \
+src/lib/Efl_Egueb_X.h \
 src/lib/efl_egueb_window_x.h
 endif
 

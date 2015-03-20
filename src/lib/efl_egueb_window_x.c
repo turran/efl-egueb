@@ -22,7 +22,7 @@
 #include "efl_egueb_window.h"
 
 #include "efl_egueb_window_private.h"
-#include "Efl_Egueb_Window_X.h"
+#include "efl_egueb_window_x.h"
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>

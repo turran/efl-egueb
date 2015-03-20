@@ -23,7 +23,7 @@
 #include "efl_egueb_window_x.h"
 #endif
 
-#if BUILD_ECORE_X
+#if BUILD_ECORE_WIN32
 #include "efl_egueb_window_win32.h"
 #endif
 
