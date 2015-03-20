@@ -198,9 +198,9 @@ int main(int argc, char *argv[])
 	/* sanitize the filename */
 	if (*filename != '.' && *filename != '/')
 	{
-		char *wd;
+		char wd[PATH_MAX];
 
-		wd = get_current_dir_name();
+		getcwd(wd, PATH_MAX);
 		if (asprintf(&filename, "%s/%s", wd, filename) < 0)
 			goto done;
 		free_file = EINA_TRUE;
