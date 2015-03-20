@@ -97,7 +97,8 @@ int main(int argc, char *argv[])
 	{
 		char wd[PATH_MAX];
 
-		getcwd(wd, PATH_MAX);
+		if (!getcwd(wd, PATH_MAX))
+			goto done;
 		if (asprintf(&filename, "%s/%s", wd, filename) < 0)
 			goto done;
 		free_file = EINA_TRUE;
