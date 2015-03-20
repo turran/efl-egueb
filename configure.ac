@@ -102,6 +102,30 @@ if test "x${build_ecore_x}" = "xyes"; then
 fi
 AM_CONDITIONAL([BUILD_ECORE_X], [test "x${build_ecore_x}" = "xyes"])
 
+### Ecore Win32 window
+AC_ARG_ENABLE([ecore-win32], [AS_HELP_STRING([--enable-ecore-win32], [Enable Ecore Win32 window])],
+  [
+    if test "x$enableval" = "xyes" ; then
+       want_ecore_win32="yes"
+    else
+       want_ecore_win32="no"
+    fi
+  ],
+  [want_ecore_win32="yes"]
+)
+PKG_CHECK_MODULES([EFL_EGUEB_WIN32], [ecore-win32], [have_ecore_win32="yes"], [have_ecore_win32="no"])
+build_ecore_win32="no"
+
+if test "x${have_ecore_win32}" = "xyes" -a "x${want_ecore_win32}" = "xyes"; then
+  build_ecore_win32="yes"
+  requirements_pc="${requirements_pc} ecore-win32 >= 1.7.99"
+fi
+
+if test "x${build_ecore_win32}" = "xyes"; then
+  AC_DEFINE([BUILD_ECORE_WIN32], [1], [Have support for ecore_win32])
+fi
+AM_CONDITIONAL([BUILD_ECORE_WIN32], [test "x${build_ecore_win32}" = "xyes"])
+
 ### SMIL based features
 AC_ARG_ENABLE([egueb-smil], [AS_HELP_STRING([--enable-egueb-smil], [Enable SMIL animations support])],
   [
@@ -248,6 +272,7 @@ echo "  OpenGL support............................: ${have_gl}"
 echo "  Edje external support.....................: ${build_edje_external}"
 echo "  Window support:"
 echo "    Ecore X.................................: ${build_ecore_x}"
+echo "    Ecore Win32.............................: ${build_ecore_win32}"
 echo "  Scripting support.........................: ${build_egueb_script}"
 echo "  Video provider support:...................: ${build_egueb_video}"
 echo

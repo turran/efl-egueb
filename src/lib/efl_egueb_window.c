@@ -19,6 +19,14 @@
 #include "efl_egueb_main.h"
 #include "efl_egueb_window.h"
 
+#if BUILD_ECORE_X
+#include "efl_egueb_window_x.h"
+#endif
+
+#if BUILD_ECORE_X
+#include "efl_egueb_window_win32.h"
+#endif
+
 #include "efl_egueb_window_private.h"
 /*============================================================================*
  *                                  Local                                     *
@@ -409,6 +417,10 @@ EAPI Efl_Egueb_Window * efl_egueb_window_auto_new(Egueb_Dom_Node *doc,
 
 #if BUILD_ECORE_X
 	thiz = efl_egueb_window_x_new(doc, NULL, 0, x, y, w, h);
+#endif
+#if BUILD_ECORE_WIN32
+	if (!thiz)
+		thiz = efl_egueb_window_win32_new(doc, NULL, 0, x, y, w, h);
 #endif
 	return thiz;
 }

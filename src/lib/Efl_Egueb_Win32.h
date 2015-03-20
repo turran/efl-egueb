@@ -15,15 +15,12 @@
  * License along with this library.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef _EFL_EGUEB_WINDOW_X_H_
-#define _EFL_EGUEB_WINDOW_X_H_
+#ifndef _EFL_EGUEB_WIN32_H_
+#define _EFL_EGUEB_WIN32_H_
 
-#include <Ecore_X.h>
+#include <Ecore_Win32.h>
 
-EAPI Efl_Egueb_Window * efl_egueb_window_x_new(Egueb_Dom_Node *doc,
-		const char *display, Ecore_X_Window parent, int x, int y,
-		int w, int h);
-EAPI Ecore_X_Window efl_egueb_window_x_window_get(Efl_Egueb_Window *w);
+#include "efl_egueb_window_win32.h"
 
 #endif
 

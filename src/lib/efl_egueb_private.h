@@ -59,7 +59,11 @@ extern int efl_egueb_log;
 #endif
 
 #if BUILD_ECORE_X
-#include "Efl_Egueb_Window_X.h"
+#include <Ecore_X.h>
+#endif
+
+#if BUILD_ECORE_WIN32
+#include <Ecore_Win32.h>
 #endif
 
 #include "efl_egueb_build.h"
