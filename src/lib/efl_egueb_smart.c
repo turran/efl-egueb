@@ -559,7 +559,7 @@ draw:
 		if (error)
 		{
 			enesim_log_dump(error);
-			enesim_log_delete(error);
+			enesim_log_unref(error);
 		}
 	}
 	INF("<%s> Drawing took %g", evas_object_name_get(thiz->o),
