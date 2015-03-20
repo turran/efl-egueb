@@ -26,8 +26,6 @@
 #define _GNU_SOURCE
 #endif
 
-#include "efl_egueb_build.h"
-
 #define CRI(...) EINA_LOG_DOM_CRIT(efl_egueb_log, __VA_ARGS__)
 #define ERR(...) EINA_LOG_DOM_ERR(efl_egueb_log, __VA_ARGS__)
 #define WRN(...) EINA_LOG_DOM_WARN(efl_egueb_log, __VA_ARGS__)
@@ -36,10 +34,34 @@
 
 extern int efl_egueb_log;
 
+/* Include external headers before including our own efl_egueb_build.h */
 #include <Evas.h>
 #include <Ecore.h>
 #include <Ecore_Con.h>
+#include <Ecore_Input.h>
 
 #include <Egueb_Dom.h>
+
+#if BUILD_EGUEB_SCRIPT
+#include <Egueb_Script.h>
+#endif
+
+#if BUILD_EGUEB_VIDEO
+#include <Egueb_Video.h>
+#endif
+
+#if BUILD_EGUEB_SMIL
+#include <Egueb_Smil.h>
+#endif
+
+#if BUILD_EGUEB_SVG
+#include "Egueb_Svg.h"
+#endif
+
+#if BUILD_ECORE_X
+#include "Efl_Egueb_Window_X.h"
+#endif
+
+#include "efl_egueb_build.h"
 
 #endif

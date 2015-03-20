@@ -15,20 +15,9 @@
  * License along with this library.
  * If not, see <http://www.gnu.org/licenses/>.
  */
+
 #include "efl_egueb_private.h"
 #include "efl_egueb_main.h"
-
-#if BUILD_EGUEB_SCRIPT
-#include <Egueb_Script.h>
-#endif
-
-#if BUILD_EGUEB_VIDEO
-#include <Egueb_Video.h>
-#endif
-
-#if BUILD_EGUEB_SMIL
-#include <Egueb_Smil.h>
-#endif
 /*============================================================================*
  *                                  Local                                     *
  *============================================================================*/

@@ -20,10 +20,6 @@
 #include "efl_egueb_window.h"
 
 #include "efl_egueb_window_private.h"
-
-#if BUILD_ECORE_X
-#include "Efl_Egueb_Window_X.h"
-#endif
 /*============================================================================*
  *                                  Local                                     *
  *============================================================================*/

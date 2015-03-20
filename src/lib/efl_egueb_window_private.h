@@ -19,7 +19,6 @@
 #define _EFL_EGUEB_WINDOW_PRIVATE_H_
 
 #include "efl_egueb_document_private.h"
-#include <Ecore_Input.h>
 
 typedef void (*Efl_Egueb_Window_Descriptor_Free)(void *data);
 typedef void (*Efl_Egueb_Window_Descriptor_Output_Update)(void *data, Eina_Rectangle *area);

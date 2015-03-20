@@ -19,11 +19,8 @@
 #include "efl_egueb_private.h"
 #include "efl_egueb_main.h"
 #include "efl_egueb_smart.h"
-#include "efl_egueb_document_private.h"
 
-#if BUILD_EGUEB_SVG
-#include "Egueb_Svg.h"
-#endif
+#include "efl_egueb_document_private.h"
 /*============================================================================*
  *                                  Local                                     *
  *============================================================================*/
