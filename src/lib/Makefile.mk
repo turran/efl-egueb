@@ -37,7 +37,7 @@ endif
 if BUILD_ECORE_WIN32
 src_lib_libefl_egueb_la_CPPFLAGS += @EFL_EGUEB_WIN32_CFLAGS@
 src_lib_libefl_egueb_la_SOURCES += src/lib/efl_egueb_window_win32.c
-src_lib_libefl_egueb_la_LIBADD += @EFL_EGUEB_WIN32_LIBS@
+src_lib_libefl_egueb_la_LIBADD += @EFL_EGUEB_WIN32_LIBS@ -lgdi32
 dist_install_efl_egueb_headers_DATA += \
 src/lib/Efl_Egueb_Win32.h \
 src/lib/efl_egueb_window_win32.h

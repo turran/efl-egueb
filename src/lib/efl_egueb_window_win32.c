@@ -30,23 +30,85 @@ typedef struct _Efl_Egueb_Window_Win32
 {
 	Efl_Egueb_Window *base;
 	Ecore_Win32_Window *win;
+	HWND win_hwnd;
+	HBITMAP bitmap;
+	unsigned char *bitmap_buffer;
+	int bitmap_size;
 	/* the event handlers */
 	Ecore_Event_Handler *handlers[10];
 } Efl_Egueb_Window_Win32;
 
 static void _update_area(Efl_Egueb_Window_Win32 *thiz, Eina_Rectangle *area)
 {
-#if 0
-	/* TODO implement this */
-#endif
+	HDC win_hdc, mem_hdc;
+	SetBitmapBits(thiz->bitmap, thiz->bitmap_size, thiz->bitmap_buffer);
+
+	win_hdc = GetDC(thiz->win_hwnd);
+	mem_hdc = CreateCompatibleDC(win_hdc);
+	SelectObject (mem_hdc, thiz->bitmap);
+	BitBlt(win_hdc, area->x, area->y, area->w, area->h, mem_hdc, area->x, area->y, SRCCOPY);
+	DeleteDC (mem_hdc);
 }
 
 static Eina_Bool _efl_egueb_window_win32_buffer_update(
 		Efl_Egueb_Window_Win32 *thiz, int w, int h)
 {
-#if 0
-	/* TODO implement this */
-#endif
+	Efl_Egueb_Window *base = thiz->base;
+	Enesim_Buffer_Sw_Data sdata;
+	BITMAP bmp;
+	HDC win_hdc;
+
+	/* destroy the previous buffer */
+	if (base->s)
+	{
+		enesim_surface_unref(base->s);
+		base->s = NULL;
+	}
+	if (base->b)
+	{
+		enesim_buffer_unref(base->b);
+		base->b = NULL;
+	}
+	if (thiz->bitmap)
+	{
+		DeleteObject(thiz->bitmap);
+		thiz->bitmap = NULL;
+		free(thiz->bitmap_buffer);
+		thiz->bitmap_buffer = NULL;
+	}
+
+	/* create the win32 BITMAP */
+	win_hdc = GetDC(thiz->win_hwnd);
+	thiz->bitmap = CreateCompatibleBitmap(win_hdc, w, h);
+	if (!thiz->bitmap)
+		return EINA_FALSE;
+	if (!GetObject (thiz->bitmap, sizeof (bmp), &bmp))
+		return EINA_FALSE;
+	thiz->bitmap_size = bmp.bmWidthBytes * h;
+	thiz->bitmap_buffer = malloc(thiz->bitmap_size);
+	ReleaseDC(thiz->win_hwnd, win_hdc);
+
+	switch (bmp.bmBitsPixel)
+	{
+		case 32:
+		sdata.xrgb8888.plane0_stride = bmp.bmWidthBytes;
+		sdata.xrgb8888.plane0 = (uint32_t *)thiz->bitmap_buffer;
+		break;
+
+		default:
+		/* FIXME Implement other cases */
+		break;
+	}
+
+	/* create the buffer */
+	base->b = enesim_buffer_new_data_from(ENESIM_FORMAT_ARGB8888, w, h, EINA_FALSE, &sdata, NULL, NULL);
+	if (!base->b)
+	{
+		free(thiz->bitmap_buffer);
+		return EINA_FALSE;
+	}
+	base->s = enesim_surface_new(ENESIM_FORMAT_ARGB8888, w, h);
+
 	return EINA_TRUE;
 }
 
@@ -54,11 +116,7 @@ static Eina_Bool _efl_egueb_window_win32_buffer_setup(Efl_Egueb_Window_Win32 *th
 {
 	Efl_Egueb_Window *base = thiz->base;
 
-#if 0
-	/* TODO Setup the buffer */
-	thiz->format = ENESIM_BUFFER_FORMAT_XRGB8888;
 	_efl_egueb_window_win32_buffer_update(thiz, base->w, base->h);
-#endif
 
 	return EINA_TRUE;
 }
@@ -96,16 +154,13 @@ static Eina_Bool _efl_egueb_window_win32_event_window_focus_out(void *data,
 static Eina_Bool _efl_egueb_window_win32_event_window_damage(void *data,
 		int type, void *event)
 {
-#if 0
-	/* TODO handle updating just a particual area */
 	Efl_Egueb_Window_Win32 *thiz = data;
 	Ecore_Win32_Event_Window_Damage *ev = event;
 	Eina_Rectangle area;
 
 	if (thiz->win != ev->window) return EINA_TRUE;
-	eina_rectangle_coords_from(&area, ev->x, ev->y, ev->w, ev->h);
+	eina_rectangle_coords_from(&area, ev->x, ev->y, ev->width, ev->height);
 	_update_area(thiz, &area);
-#endif
 
 	return EINA_TRUE;
 }
@@ -216,6 +271,13 @@ static void _efl_egueb_window_win32_free(void *data)
 	Efl_Egueb_Window_Win32 *thiz = data;
 
 	_efl_egueb_window_win32_event_unregister(thiz);
+	if (thiz->bitmap)
+	{
+		DeleteObject(thiz->bitmap);
+		thiz->bitmap = NULL;
+		free(thiz->bitmap_buffer);
+		thiz->bitmap_buffer = NULL;
+	}
 }
 
 static Efl_Egueb_Window_Descriptor _descriptor = {
@@ -235,6 +297,7 @@ EAPI Efl_Egueb_Window * efl_egueb_window_win32_new(Egueb_Dom_Node *doc,
 {
 	Efl_Egueb_Window_Win32 *thiz;
 	Efl_Egueb_Window *ret;
+	Ecore_Win32_Window *win;
 
 	if (!ecore_win32_init(display)) return NULL;
 	thiz = calloc(1, sizeof(Efl_Egueb_Window_Win32));
@@ -245,11 +308,24 @@ EAPI Efl_Egueb_Window * efl_egueb_window_win32_new(Egueb_Dom_Node *doc,
 		return NULL;
 	}
 
+	win = ecore_win32_window_new (parent, x, y, ret->w, ret->h);
+
+	thiz->win = win;
 	thiz->base = ret;
+	thiz->win_hwnd = ecore_win32_window_hwnd_get(win);
+
 	_efl_egueb_window_win32_event_register(thiz);
-	/* TODO get the window handle
-	 * ecore_win32_window_hwnd_get()
+
+	/* create our own buffer to use for converting the enesim surface
+	 * into something the win32 GDI understands
 	 */
+	if (!_efl_egueb_window_win32_buffer_setup(thiz))
+	{
+		ecore_win32_window_free(thiz->win);
+		free(thiz);
+		return NULL;
+	}
+	ecore_win32_window_show(win);
 	return ret;
 }
 
