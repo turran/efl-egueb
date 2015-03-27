@@ -32,13 +32,14 @@ endif
 sed_edc_process = \
 $(SED) \
 -e 's,@PACKAGE_DATA_DIR@,$(pkgdatadir),g' \
-< $< > $@ || rm $@
+< $< > $@ || rm -f $@
 
 edc_verbose = $(edc_verbose_@AM_V@)
 edc_verbose_ = $(edc_verbose_@AM_DEFAULT_V@)
 edc_verbose_0 = @echo "  EDC     " $@;
 
 data/efl_svg.edc: $(top_srcdir)/data/efl_svg.edc.in Makefile
+	@mkdir -p data
 	@rm -f $@
 	$(edc_verbose)$(sed_edc_process)
 
