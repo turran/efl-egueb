@@ -196,7 +196,7 @@ has_fragment:
 }
 
 static void _efl_egueb_document_io_image_async_cb(Enesim_Buffer *b, void *data,
-		int error)
+		Eina_Bool success, Eina_Error error)
 {
 	Egueb_Dom_Event *ev = data;
 	Egueb_Dom_Node *n;
