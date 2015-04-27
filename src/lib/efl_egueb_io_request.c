@@ -44,8 +44,9 @@ static Eina_Bool _efl_egueb_io_request_url_completion_cb(void *data, int type EI
 	if (ev->url_con != thiz->conn)
 		return EINA_TRUE;
 
+	/* TODO can we avoid this dup? */
 	s = enesim_stream_buffer_new(eina_binbuf_string_steal(thiz->binbuf),
-			eina_binbuf_length_get(thiz->binbuf));
+			eina_binbuf_length_get(thiz->binbuf), free);
 	thiz->in_event = EINA_TRUE;
 	if (thiz->descriptor->completion)
 		thiz->descriptor->completion(thiz, s);
