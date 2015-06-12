@@ -90,10 +90,12 @@ static void _efl_egueb_smart_svg_setup(Efl_Egueb_Smart_Svg *thiz)
 
 	/* register the document related events */
 	doc = efl_egueb_smart_document_get(thiz->obj);
-	egueb_dom_node_event_listener_add(doc,
+	egueb_dom_event_target_event_listener_add(
+			EGUEB_DOM_EVENT_TARGET_CAST(doc),
 			EGUEB_DOM_EVENT_FOCUS_IN,
 			_efl_egueb_smart_svg_focus_in_cb, EINA_FALSE, thiz);
-	egueb_dom_node_event_listener_add(doc,
+	egueb_dom_event_target_event_listener_add(
+			EGUEB_DOM_EVENT_TARGET_CAST(doc),
 			EGUEB_DOM_EVENT_FOCUS_OUT,
 			_efl_egueb_smart_svg_focus_out_cb, EINA_FALSE, thiz);
 	egueb_dom_node_unref(doc);
@@ -105,10 +107,12 @@ static void _efl_egueb_smart_svg_cleanup(Efl_Egueb_Smart_Svg *thiz)
 
 	/* unregister the document related events */
 	doc = efl_egueb_smart_document_get(thiz->obj);
-	egueb_dom_node_event_listener_remove(doc,
+	egueb_dom_event_target_event_listener_remove(
+			EGUEB_DOM_EVENT_TARGET_CAST(doc),
 			EGUEB_DOM_EVENT_FOCUS_IN,
 			_efl_egueb_smart_svg_focus_in_cb, EINA_FALSE, thiz);
-	egueb_dom_node_event_listener_remove(doc,
+	egueb_dom_event_target_event_listener_remove(
+			EGUEB_DOM_EVENT_TARGET_CAST(doc),
 			EGUEB_DOM_EVENT_FOCUS_OUT,
 			_efl_egueb_smart_svg_focus_out_cb, EINA_FALSE, thiz);
 	egueb_dom_node_unref(doc);

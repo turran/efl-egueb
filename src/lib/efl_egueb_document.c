@@ -139,7 +139,7 @@ static void _efl_egueb_document_io_relative_data_cb(
 	Egueb_Dom_String *location;
 	Egueb_Dom_Uri resolved;
 
-	node = egueb_dom_event_target_get(ev);
+	node = EGUEB_DOM_NODE(egueb_dom_event_target_get(ev));
 	doc = egueb_dom_node_owner_document_get(node);
 	if (!doc)
 	{
@@ -202,7 +202,7 @@ static void _efl_egueb_document_io_image_async_cb(Enesim_Buffer *b, void *data,
 	Egueb_Dom_Node *n;
 	Enesim_Surface *src = NULL;
 
-	n = egueb_dom_event_target_get(ev);
+	n = EGUEB_DOM_NODE(egueb_dom_event_target_get(ev));
 	if (!b)
 	{
 		ERR("Can not load image, error: %s", eina_error_msg_get(error));
@@ -349,7 +349,7 @@ static void _efl_egueb_document_multimedia_video_cb(Egueb_Dom_Event *ev, void *d
 	Egueb_Dom_Node *n;
 	Enesim_Renderer *r;
 
-	n = egueb_dom_event_target_get(ev);
+	n = EGUEB_DOM_NODE(egueb_dom_event_target_get(ev));
 	r = egueb_dom_event_multimedia_video_renderer_get(ev);
 #if BUILD_EGUEB_VIDEO
 	vp = egueb_video_provider_new(r);
@@ -394,10 +394,12 @@ static void _efl_egueb_document_topmost_setup(Efl_Egueb_Document *thiz,
 			EGUEB_DOM_FEATURE_IO_NAME, NULL);
 	if (thiz->io)
 	{
-		egueb_dom_node_event_listener_add(topmost,
+		egueb_dom_event_target_event_listener_add(
+				EGUEB_DOM_EVENT_TARGET_CAST(topmost),
 				EGUEB_DOM_EVENT_IO_DATA,
 				_efl_egueb_document_io_data_cb, EINA_TRUE, thiz);
-		egueb_dom_node_event_listener_add(topmost,
+		egueb_dom_event_target_event_listener_add(
+				EGUEB_DOM_EVENT_TARGET_CAST(topmost),
 				EGUEB_DOM_EVENT_IO_IMAGE,
 				_efl_egueb_document_io_image_cb, EINA_TRUE, thiz);
 		thiz->idle_enterer = ecore_idle_enterer_add(
@@ -411,7 +413,8 @@ static void _efl_egueb_document_topmost_setup(Efl_Egueb_Document *thiz,
 			EGUEB_DOM_FEATURE_NAVIGATION_NAME, NULL);
 	if (thiz->navigation)
 	{
-		egueb_dom_node_event_listener_add(topmost,
+		egueb_dom_event_target_event_listener_add(
+				EGUEB_DOM_EVENT_TARGET_CAST(topmost),
 				EGUEB_DOM_EVENT_NAVIGATION_GO_TO,
 				_efl_egueb_document_navigation_go_to_cb,
 				EINA_TRUE, thiz);
@@ -435,7 +438,8 @@ static void _efl_egueb_document_topmost_setup(Efl_Egueb_Document *thiz,
 	thiz->script = egueb_dom_node_feature_get(topmost, EGUEB_DOM_FEATURE_SCRIPT_NAME, NULL);
 	if (thiz->script)
 	{
-		egueb_dom_node_event_listener_add(topmost,
+		egueb_dom_event_target_event_listener_add(
+				EGUEB_DOM_EVENT_TARGET_CAST(topmost),
 				EGUEB_DOM_EVENT_SCRIPT_SCRIPTER,
 				_efl_egueb_document_script_scripter_cb, EINA_TRUE, thiz);
 		thiz->scripters = eina_hash_string_superfast_new(EINA_FREE_CB(egueb_dom_scripter_free));
@@ -445,7 +449,8 @@ static void _efl_egueb_document_topmost_setup(Efl_Egueb_Document *thiz,
 	thiz->multimedia = egueb_dom_node_feature_get(topmost, EGUEB_DOM_FEATURE_MULTIMEDIA_NAME, NULL);
 	if (thiz->multimedia)
 	{
-		egueb_dom_node_event_listener_add(topmost,
+		egueb_dom_event_target_event_listener_add(
+				EGUEB_DOM_EVENT_TARGET_CAST(topmost),
 				EGUEB_DOM_EVENT_MULTIMEDIA_VIDEO,
 				_efl_egueb_document_multimedia_video_cb, EINA_TRUE, thiz);
 	}
@@ -478,11 +483,13 @@ static void _efl_egueb_document_topmost_cleanup(Efl_Egueb_Document *thiz)
 
 	if (thiz->io)
 	{
-		egueb_dom_node_event_listener_remove(thiz->topmost,
+		egueb_dom_event_target_event_listener_remove(
+				EGUEB_DOM_EVENT_TARGET_CAST(thiz->topmost),
 				EGUEB_DOM_EVENT_IO_DATA,
 				_efl_egueb_document_io_data_cb,
 				EINA_TRUE, thiz);
-		egueb_dom_node_event_listener_remove(thiz->topmost,
+		egueb_dom_event_target_event_listener_remove(
+				EGUEB_DOM_EVENT_TARGET_CAST(thiz->topmost),
 				EGUEB_DOM_EVENT_IO_IMAGE,
 				_efl_egueb_document_io_image_cb,
 				EINA_TRUE, thiz);
@@ -493,7 +500,8 @@ static void _efl_egueb_document_topmost_cleanup(Efl_Egueb_Document *thiz)
 
 	if (thiz->navigation)
 	{
-		egueb_dom_node_event_listener_remove(thiz->topmost,
+		egueb_dom_event_target_event_listener_remove(
+				EGUEB_DOM_EVENT_TARGET_CAST(thiz->topmost),
 				EGUEB_DOM_EVENT_NAVIGATION_GO_TO,
 				_efl_egueb_document_navigation_go_to_cb,
 				EINA_TRUE, thiz);
