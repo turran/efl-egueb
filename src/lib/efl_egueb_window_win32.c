@@ -285,33 +285,47 @@ static Efl_Egueb_Window_Descriptor _descriptor = {
 	/* .output_update 	= */ _efl_egueb_window_win32_output_update,
 	/* .free 		= */ _efl_egueb_window_win32_free,
 };
+/*----------------------------------------------------------------------------*
+ *                        DOM  Window descriptor interface                    *
+ *----------------------------------------------------------------------------*/
+static Egueb_Dom_Window_Descriptor _dom_descriptor = {
+	/* .destroy 		= */ efl_egueb_window_destroy,
+	/* .timeout_set 	= */ efl_egueb_window_timeout_set,
+	/* .timeout_clear 	= */ efl_egueb_window_timeout_clear,
+};
 /*============================================================================*
  *                                 Global                                     *
  *============================================================================*/
 /*============================================================================*
  *                                   API                                      *
  *============================================================================*/
-EAPI Efl_Egueb_Window * efl_egueb_window_win32_new(Egueb_Dom_Node *doc,
+EAPI Egueb_Dom_Window * efl_egueb_window_win32_new(Egueb_Dom_Node *doc,
 		const char *display, Ecore_Win32_Window *parent, int x, int y,
 		int w, int h)
 {
 	Efl_Egueb_Window_Win32 *thiz;
-	Efl_Egueb_Window *ret;
+	Efl_Egueb_Window *ewin;
+	Egueb_Dom_Window *ret;
 	Ecore_Win32_Window *win;
 
-	if (!ecore_win32_init(display)) return NULL;
+	if (!ecore_win32_init(display))
+		return NULL;
+
+	/* create the efl win32 window */
 	thiz = calloc(1, sizeof(Efl_Egueb_Window_Win32));
-	ret = efl_egueb_window_new(doc, x, y, w, h, &_descriptor, thiz);
-	if (!ret)
+
+	/* create the efl window */
+	ewin = efl_egueb_window_new(doc, x, y, w, h, &_descriptor, thiz);
+	if (!ewin)
 	{
 		free(thiz);
 		return NULL;
 	}
 
-	win = ecore_win32_window_new (parent, x, y, ret->w, ret->h);
+	win = ecore_win32_window_new (parent, x, y, ewin->w, ewin->h);
 
 	thiz->win = win;
-	thiz->base = ret;
+	thiz->base = ewin;
 	thiz->win_hwnd = ecore_win32_window_hwnd_get(win);
 
 	_efl_egueb_window_win32_event_register(thiz);
@@ -326,12 +340,23 @@ EAPI Efl_Egueb_Window * efl_egueb_window_win32_new(Egueb_Dom_Node *doc,
 		return NULL;
 	}
 	ecore_win32_window_show(win);
+
+	/* create the dom window */
+	ret = egueb_dom_window_new(&_dom_descriptor, doc, ewin);
+	ewin->win = ret;
+
 	return ret;
 }
 
-EAPI Ecore_Win32_Window * efl_egueb_window_win32_window_get(Efl_Egueb_Window *w)
+EAPI Ecore_Win32_Window * efl_egueb_window_win32_window_get(Egueb_Dom_Window *w)
 {
-	return 0;
+	Efl_Egueb_Window_Win32 *thiz;
+	Efl_Egueb_Window *ewin;
+
+	ewin = egueb_dom_window_data_get(w);
+	thiz = ewin->data;
+
+	return thiz->win;
 }
 #endif
 

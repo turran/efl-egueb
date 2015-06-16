@@ -31,10 +31,11 @@ typedef struct _Efl_Egueb_Window_Descriptor
 	Efl_Egueb_Window_Descriptor_Free free;
 } Efl_Egueb_Window_Descriptor;
 
-struct _Efl_Egueb_Window
+typedef struct _Efl_Egueb_Window
 {
 	Efl_Egueb_Document edoc;
 	Enesim_Renderer *background;
+	Egueb_Dom_Window *win;
 	Egueb_Dom_Node *doc;
 	Egueb_Dom_Node *topmost;
 	Egueb_Dom_Feature *render;
@@ -55,12 +56,18 @@ struct _Efl_Egueb_Window
 
 	void *data;
 	const Efl_Egueb_Window_Descriptor *desc;
-};
+} Efl_Egueb_Window;
 
 Efl_Egueb_Window * efl_egueb_window_new(Egueb_Dom_Node *doc,
 		int x, int y, int w, int h,
 		const Efl_Egueb_Window_Descriptor *d, void *data);
-
+void efl_egueb_window_free(Efl_Egueb_Window *thiz);
 void efl_egueb_window_update_size(Efl_Egueb_Window *thiz, int w, int h);
+
+void efl_egueb_window_destroy(void *data);
+void * efl_egueb_window_timeout_set(void *data,
+		Egueb_Dom_Window_Descriptor_Timeout_Cb cb,
+		int64_t delay, void *user_data);
+void efl_egueb_window_timeout_clear(void *data, void *timeout);
 
 #endif

@@ -31,6 +31,21 @@
 /*============================================================================*
  *                                  Local                                     *
  *============================================================================*/
+typedef struct _Efl_Egueb_Timeout
+{
+	Ecore_Timer *timer;
+	Egueb_Dom_Window_Descriptor_Timeout_Cb cb;
+	Egueb_Dom_Window *win;
+	void *user_data;
+} Efl_Egueb_Timeout;
+
+static Eina_Bool _efl_egueb_window_timout_cb(void *data)
+{
+	Efl_Egueb_Timeout *to = data;
+	to->cb(to->win, to->user_data);
+	return EINA_TRUE;
+}
+
 static inline Eina_Bool _check_window(Efl_Egueb_Window *thiz, Ecore_Window w)
 {
 	Ecore_Window real;
@@ -150,18 +165,12 @@ static Eina_Bool _efl_egueb_window_mouse_wheel(void *data,
 static Eina_Bool _efl_egueb_window_mouse_in(void *data,
 		int type, void *event)
 {
-	Efl_Egueb_Window *thiz = data;
-
-	printf("mouse in\n");
 	return EINA_TRUE;
 }
 
 static Eina_Bool _efl_egueb_window_mouse_out(void *data,
 		int type, void *event)
 {
-	Efl_Egueb_Window *thiz = data;
-
-	printf("mouse out\n");
 	return EINA_TRUE;
 }
 
@@ -407,25 +416,7 @@ Efl_Egueb_Window * efl_egueb_window_new(Egueb_Dom_Node *doc,
 	return thiz;
 }
 
-/*============================================================================*
- *                                   API                                      *
- *============================================================================*/
-EAPI Efl_Egueb_Window * efl_egueb_window_auto_new(Egueb_Dom_Node *doc,
-		int x, int y, int w, int h)
-{
-	Efl_Egueb_Window *thiz = NULL;
-
-#if BUILD_ECORE_X
-	thiz = efl_egueb_window_x_new(doc, NULL, 0, x, y, w, h);
-#endif
-#if BUILD_ECORE_WIN32
-	if (!thiz)
-		thiz = efl_egueb_window_win32_new(doc, NULL, 0, x, y, w, h);
-#endif
-	return thiz;
-}
-
-EAPI void efl_egueb_window_free(Efl_Egueb_Window *thiz)
+void efl_egueb_window_free(Efl_Egueb_Window *thiz)
 {
 	if (!thiz) return;
 
@@ -445,9 +436,63 @@ EAPI void efl_egueb_window_free(Efl_Egueb_Window *thiz)
 	enesim_renderer_unref(thiz->background);
 	free(thiz);
 }
+/*----------------------------------------------------------------------------*
+ *                        DOM  Window descriptor interface                    *
+ *----------------------------------------------------------------------------*/
+void efl_egueb_window_destroy(void *data)
+{
+	Efl_Egueb_Window *thiz = data;
+	efl_egueb_window_free(thiz);
+}
 
-EAPI void efl_egueb_window_color_set(Efl_Egueb_Window *thiz,
+void * efl_egueb_window_timeout_set(void *data,
+		Egueb_Dom_Window_Descriptor_Timeout_Cb cb,
+		int64_t delay, void *user_data)
+{
+	Efl_Egueb_Window *thiz = data;
+	Efl_Egueb_Timeout *to;
+
+	to = calloc(1, sizeof(Efl_Egueb_Timeout));
+	to->cb = cb;
+	to->user_data = user_data;
+	to->timer = ecore_timer_add(delay, _efl_egueb_window_timout_cb, to);
+	to->win = thiz->win;
+
+	/* TODO Add it to the list of timers of the window */
+
+	return to;
+}
+
+void efl_egueb_window_timeout_clear(void *data, void *timeout)
+{
+	Efl_Egueb_Timeout *to = data;
+
+	ecore_timer_del(to->timer);
+	free(to);
+}
+/*============================================================================*
+ *                                   API                                      *
+ *============================================================================*/
+EAPI Egueb_Dom_Window * efl_egueb_window_auto_new(Egueb_Dom_Node *doc,
+		int x, int y, int w, int h)
+{
+	Egueb_Dom_Window *ret = NULL;
+
+#if BUILD_ECORE_X
+	ret = efl_egueb_window_x_new(doc, NULL, 0, x, y, w, h);
+#endif
+#if BUILD_ECORE_WIN32
+	if (!ret)
+		ret = efl_egueb_window_win32_new(doc, NULL, 0, x, y, w, h);
+#endif
+	return ret;
+}
+
+EAPI void efl_egueb_window_color_set(Egueb_Dom_Window *w,
 		Enesim_Color color)
 {
+	Efl_Egueb_Window *thiz;
+
+	thiz = egueb_dom_window_data_get(w);
 	enesim_renderer_background_color_set(thiz->background, color);
 }

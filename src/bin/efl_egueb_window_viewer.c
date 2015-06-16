@@ -31,7 +31,7 @@ static void help(const char *name)
 int main(int argc, char *argv[])
 {
 	Efl_Egueb_Window_Viewer thiz;
-	Efl_Egueb_Window *w;
+	Egueb_Dom_Window *w;
 	Egueb_Dom_Node *doc = NULL;
 	Enesim_Stream *s;
 	Eina_Bool free_file = EINA_FALSE;
@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
 
 	ecore_main_loop_begin();
 
-	efl_egueb_window_free(w);
+	egueb_dom_window_unref(w);
 	efl_egueb_shutdown();
 
 	return 0;

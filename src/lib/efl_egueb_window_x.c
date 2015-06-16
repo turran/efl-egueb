@@ -389,27 +389,41 @@ static Efl_Egueb_Window_Descriptor _descriptor = {
 	/* .output_update 	= */ _efl_egueb_window_x_output_update,
 	/* .free 		= */ _efl_egueb_window_x_free,
 };
+/*----------------------------------------------------------------------------*
+ *                        DOM  Window descriptor interface                    *
+ *----------------------------------------------------------------------------*/
+static Egueb_Dom_Window_Descriptor _dom_descriptor = {
+	/* .destroy 		= */ efl_egueb_window_destroy,
+	/* .timeout_set 	= */ efl_egueb_window_timeout_set,
+	/* .timeout_clear 	= */ efl_egueb_window_timeout_clear,
+};
 /*============================================================================*
  *                                 Global                                     *
  *============================================================================*/
 /*============================================================================*
  *                                   API                                      *
  *============================================================================*/
-EAPI Efl_Egueb_Window * efl_egueb_window_x_new(Egueb_Dom_Node *doc,
+EAPI Egueb_Dom_Window * efl_egueb_window_x_new(Egueb_Dom_Node *doc,
 		const char *display, Ecore_X_Window parent, int x, int y,
 		int w, int h)
 {
 	Efl_Egueb_Window_X *thiz;
-	Efl_Egueb_Window *ret;
+	Efl_Egueb_Window *ewin;
+	Egueb_Dom_Window *ret;
 	Ecore_X_Window win;
 	Ecore_X_Screen *screen;
 	Ecore_X_Window_Attributes at;
 	Eina_Bool argb = EINA_FALSE;
 
-	if (!ecore_x_init(display)) return NULL;
+	if (!ecore_x_init(display))
+		return NULL;
+
+	/* create the efl x window */
 	thiz = calloc(1, sizeof(Efl_Egueb_Window_X));
-	ret = efl_egueb_window_new(doc, x, y, w, h, &_descriptor, thiz);
-	if (!ret)
+
+	/* create the efl window */
+	ewin = efl_egueb_window_new(doc, x, y, w, h, &_descriptor, thiz);
+	if (!ewin)
 	{
 		free(thiz);
 		return NULL;
@@ -419,9 +433,9 @@ EAPI Efl_Egueb_Window * efl_egueb_window_x_new(Egueb_Dom_Node *doc,
 		argb = ecore_x_window_argb_get(parent);
 
 	if (argb)
-		w = ecore_x_window_argb_new(parent, x, y, ret->w, ret->h);
+		w = ecore_x_window_argb_new(parent, x, y, ewin->w, ewin->h);
 
-	win = ecore_x_window_new(parent, x, y, ret->w, ret->h);
+	win = ecore_x_window_new(parent, x, y, ewin->w, ewin->h);
 	ecore_x_window_defaults_set(win);
 
 	screen = _efl_egueb_window_x_screen_get(parent);
@@ -433,7 +447,7 @@ EAPI Efl_Egueb_Window * efl_egueb_window_x_new(Egueb_Dom_Node *doc,
 	thiz->colormap = at.colormap;
 	thiz->depth = at.depth;
 	thiz->argb = argb;
-	thiz->base = ret;
+	thiz->base = ewin;
 
 	_efl_egueb_window_x_event_register(thiz);
 
@@ -448,11 +462,21 @@ EAPI Efl_Egueb_Window * efl_egueb_window_x_new(Egueb_Dom_Node *doc,
 	}
 	ecore_x_window_show(win);
 
+	/* create the dom window */
+	ret = egueb_dom_window_new(&_dom_descriptor, doc, ewin);
+	ewin->win = ret;
+
 	return ret;
 }
 
-EAPI Ecore_X_Window efl_egueb_window_x_window_get(Efl_Egueb_Window *w)
+EAPI Ecore_X_Window efl_egueb_window_x_window_get(Egueb_Dom_Window *w)
 {
-	return 0;
+	Efl_Egueb_Window_X *thiz;
+	Efl_Egueb_Window *ewin;
+
+	ewin = egueb_dom_window_data_get(w);
+	thiz = ewin->data;
+
+	return thiz->win;
 }
 #endif

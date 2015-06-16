@@ -18,10 +18,10 @@
 #ifndef _EFL_EGUEB_WINDOW_X_H_
 #define _EFL_EGUEB_WINDOW_X_H_
 
-EAPI Efl_Egueb_Window * efl_egueb_window_x_new(Egueb_Dom_Node *doc,
+EAPI Egueb_Dom_Window * efl_egueb_window_x_new(Egueb_Dom_Node *doc,
 		const char *display, Ecore_X_Window parent, int x, int y,
 		int w, int h);
-EAPI Ecore_X_Window efl_egueb_window_x_window_get(Efl_Egueb_Window *w);
+EAPI Ecore_X_Window efl_egueb_window_x_window_get(Egueb_Dom_Window *w);
 
 #endif
 
