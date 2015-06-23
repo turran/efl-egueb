@@ -417,10 +417,12 @@ EAPI Egueb_Dom_Window * efl_egueb_window_x_new(Egueb_Dom_Node *doc,
 	Efl_Egueb_Window_X *thiz;
 	Efl_Egueb_Window *ewin;
 	Egueb_Dom_Window *ret;
+	Ecore_X_Atom protos[1];
 	Ecore_X_Window win;
 	Ecore_X_Screen *screen;
 	Ecore_X_Window_Attributes at;
 	Eina_Bool argb = EINA_FALSE;
+	unsigned int num = 0;
 
 	if (!ecore_x_init(display))
 		return NULL;
@@ -443,6 +445,10 @@ EAPI Egueb_Dom_Window * efl_egueb_window_x_new(Egueb_Dom_Node *doc,
 		w = ecore_x_window_argb_new(parent, x, y, ewin->w, ewin->h);
 
 	win = ecore_x_window_new(parent, x, y, ewin->w, ewin->h);
+	/* Set the protocols */
+	protos[num++] = ECORE_X_ATOM_WM_DELETE_WINDOW;
+	ecore_x_icccm_protocol_atoms_set(win, protos, num);
+
 	ecore_x_window_defaults_set(win);
 
 	screen = _efl_egueb_window_x_screen_get(parent);
