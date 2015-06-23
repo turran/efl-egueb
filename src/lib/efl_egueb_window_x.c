@@ -183,7 +183,6 @@ static Eina_Bool _efl_egueb_window_x_event_window_damage(void *data,
 static Eina_Bool _efl_egueb_window_x_event_window_destroy(void *data,
 		int type, void *event)
 {
-	//printf("destroy\n");
 	return EINA_TRUE;
 }
 
@@ -209,7 +208,12 @@ static Eina_Bool _efl_egueb_window_x_event_window_configure(void *data,
 static Eina_Bool _efl_egueb_window_x_event_window_delete_request(void *data,
 		int type, void *event)
 {
-	//printf("delete request\n");
+	Efl_Egueb_Window_X *thiz = data;
+	Efl_Egueb_Window *base = thiz->base;
+	Ecore_X_Event_Window_Delete_Request *ev = event;
+
+	if (thiz->win != ev->win) return EINA_TRUE;
+	egueb_dom_window_close_notify(base->win);
 	return EINA_TRUE;
 }
 
@@ -217,7 +221,6 @@ static Eina_Bool _efl_egueb_window_x_event_window_show(void *data,
 		int type, void *event)
 {
 	Efl_Egueb_Window_X *thiz = data;
-	Efl_Egueb_Window *base = thiz->base;
 	Ecore_X_Event_Window_Show *ev = event;
 	Ecore_X_GC gc;
 
@@ -394,6 +397,10 @@ static Efl_Egueb_Window_Descriptor _descriptor = {
  *----------------------------------------------------------------------------*/
 static Egueb_Dom_Window_Descriptor _dom_descriptor = {
 	/* .destroy 		= */ efl_egueb_window_destroy,
+	/* .inner_width_get 	= */ efl_egueb_window_width_get,
+	/* .inner_height_get 	= */ efl_egueb_window_height_get,
+	/* .outter_width_get 	= */ efl_egueb_window_width_get,
+	/* .outter_height_get 	= */ efl_egueb_window_height_get,
 	/* .timeout_set 	= */ efl_egueb_window_timeout_set,
 	/* .timeout_clear 	= */ efl_egueb_window_timeout_clear,
 };

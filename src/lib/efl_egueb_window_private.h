@@ -69,5 +69,7 @@ void * efl_egueb_window_timeout_set(void *data,
 		Egueb_Dom_Window_Descriptor_Timeout_Cb cb,
 		int64_t delay, void *user_data);
 void efl_egueb_window_timeout_clear(void *data, void *timeout);
+int efl_egueb_window_width_get(void *data);
+int efl_egueb_window_height_get(void *data);
 
 #endif

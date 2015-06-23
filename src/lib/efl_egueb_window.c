@@ -341,11 +341,14 @@ void efl_egueb_window_update_size(Efl_Egueb_Window *thiz, int w, int h)
 {
 	thiz->w = w;
 	thiz->h = h;
+
+	/* TODO do we actually need this function? */
 	if (thiz->window)
 	{
 		egueb_dom_feature_window_content_size_set(thiz->window,
 				thiz->w, thiz->h);
 	}
+	egueb_dom_window_resize_notify(thiz->win);
 }
 
 Efl_Egueb_Window * efl_egueb_window_new(Egueb_Dom_Node *doc,
@@ -469,6 +472,18 @@ void efl_egueb_window_timeout_clear(void *data, void *timeout)
 
 	ecore_timer_del(to->timer);
 	free(to);
+}
+
+int efl_egueb_window_width_get(void *data)
+{
+	Efl_Egueb_Window *thiz = data;
+	return thiz->w;
+}
+
+int efl_egueb_window_height_get(void *data)
+{
+	Efl_Egueb_Window *thiz = data;
+	return thiz->h;
 }
 /*============================================================================*
  *                                   API                                      *

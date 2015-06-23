@@ -290,6 +290,10 @@ static Efl_Egueb_Window_Descriptor _descriptor = {
  *----------------------------------------------------------------------------*/
 static Egueb_Dom_Window_Descriptor _dom_descriptor = {
 	/* .destroy 		= */ efl_egueb_window_destroy,
+	/* .inner_width_get 	= */ efl_egueb_window_width_get,
+	/* .inner_height_get 	= */ efl_egueb_window_height_get,
+	/* .outter_width_get 	= */ efl_egueb_window_width_get,
+	/* .outter_height_get 	= */ efl_egueb_window_height_get,
 	/* .timeout_set 	= */ efl_egueb_window_timeout_set,
 	/* .timeout_clear 	= */ efl_egueb_window_timeout_clear,
 };
