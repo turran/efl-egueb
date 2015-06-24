@@ -289,6 +289,7 @@ static Efl_Egueb_Window_Descriptor _descriptor = {
  *                        DOM  Window descriptor interface                    *
  *----------------------------------------------------------------------------*/
 static Egueb_Dom_Window_Descriptor _dom_descriptor = {
+	/* .version 		= */ EGUEB_DOM_WINDOW_DESCRIPTOR_VERSION,
 	/* .destroy 		= */ efl_egueb_window_destroy,
 	/* .inner_width_get 	= */ efl_egueb_window_width_get,
 	/* .inner_height_get 	= */ efl_egueb_window_height_get,
