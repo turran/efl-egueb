@@ -442,7 +442,7 @@ static void _efl_egueb_document_topmost_setup(Efl_Egueb_Document *thiz,
 				EGUEB_DOM_EVENT_TARGET_CAST(topmost),
 				EGUEB_DOM_EVENT_SCRIPT_SCRIPTER,
 				_efl_egueb_document_script_scripter_cb, EINA_TRUE, thiz);
-		thiz->scripters = eina_hash_string_superfast_new(EINA_FREE_CB(egueb_dom_scripter_free));
+		thiz->scripters = eina_hash_string_superfast_new(EINA_FREE_CB(egueb_dom_scripter_unref));
 	}
 
 	/* check for the multimedia feature */
