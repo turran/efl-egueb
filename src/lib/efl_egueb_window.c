@@ -344,18 +344,17 @@ void efl_egueb_window_update_size(Efl_Egueb_Window *thiz, int w, int h)
 	/* TODO do we actually need this function? */
 	if (thiz->window)
 	{
-		egueb_dom_feature_window_content_size_set(thiz->window,
+		egueb_dom_feature_window_size_set(thiz->window,
 				thiz->w, thiz->h);
 	}
 	egueb_dom_window_resize_notify(thiz->win);
 }
 
 Efl_Egueb_Window * efl_egueb_window_new(Egueb_Dom_Node *doc,
-		int x, int y, int w, int h,
+		int x, int y, int *w, int *h,
 		const Efl_Egueb_Window_Descriptor *d, void *data)
 {
 	Efl_Egueb_Window *thiz;
-	int cw, ch;
 
 	if (!doc) return NULL;
 
@@ -366,28 +365,47 @@ Efl_Egueb_Window * efl_egueb_window_new(Egueb_Dom_Node *doc,
 	thiz->desc = d;
 	thiz->data = data;
 
-	/* set the content size */
-	egueb_dom_feature_window_content_size_set(thiz->window, w, h);
-	/* now process the document */
-	egueb_dom_document_process(doc);
-	egueb_dom_feature_window_content_size_get(thiz->window, &cw, &ch);
-	if (cw <= 0 || ch <= 0)
+	/* in case the user does not provide a size */
+	if (*w <= 0 || *h <= 0)
 	{
-		ERR("Invalid size of the window %d %d", cw, ch);
+		Egueb_Dom_Feature_Window_Hint_Data wdata;
+		int whints;
+
+		whints = egueb_dom_feature_window_hints_get(thiz->window, &wdata);
+		if (whints & EGUEB_DOM_FEATURE_WINDOW_HINT_PREFERRED)
+		{
+			if (wdata.pref_width != -1 && *w == -1)
+				*w = wdata.pref_width;
+			if (wdata.pref_height != -1 && *h == -1)
+				*h = wdata.pref_height;
+		}
+
+		if (whints & EGUEB_DOM_FEATURE_WINDOW_HINT_MIN_MAX)
+		{
+			if (wdata.min_width != -1 && *w < wdata.min_width)
+				*w = wdata.min_width;
+			if (wdata.min_height != -1 && *h < wdata.min_height)
+				*h = wdata.min_height;
+
+			if (wdata.max_width != -1 && *w > wdata.max_width)
+				*w = wdata.max_width;
+			if (wdata.max_height != -1 && *h > wdata.max_height)
+				*h = wdata.max_height;
+		}
+	}
+
+	if (*w <= 0 || *h <= 0)
+	{
+		ERR("Invalid size of the window %d %d", *w, *h);
 		efl_egueb_window_free(thiz);
 		return NULL;
 	}
+	/* set the window size */
+	egueb_dom_feature_window_size_set(thiz->window, *w, *h);
 
-	/* sanitize the size */
-	if (w <= 0)
-		w = cw;
-
-	if (h <= 0)
-		h = ch;
-
-	DBG("Using size of %d %d", w, h);
-	thiz->w = w;
-	thiz->h = h;
+	DBG("Using size of %d %d", *w, *h);
+	thiz->w = *w;
+	thiz->h = *h;
 	thiz->x = x;
 	thiz->y = y;
 

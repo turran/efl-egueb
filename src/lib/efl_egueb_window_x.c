@@ -432,7 +432,7 @@ EAPI Egueb_Dom_Window * efl_egueb_window_x_new(Egueb_Dom_Node *doc,
 	thiz = calloc(1, sizeof(Efl_Egueb_Window_X));
 
 	/* create the efl window */
-	ewin = efl_egueb_window_new(doc, x, y, w, h, &_descriptor, thiz);
+	ewin = efl_egueb_window_new(doc, x, y, &w, &h, &_descriptor, thiz);
 	if (!ewin)
 	{
 		free(thiz);
@@ -443,9 +443,9 @@ EAPI Egueb_Dom_Window * efl_egueb_window_x_new(Egueb_Dom_Node *doc,
 		argb = ecore_x_window_argb_get(parent);
 
 	if (argb)
-		w = ecore_x_window_argb_new(parent, x, y, ewin->w, ewin->h);
-
-	win = ecore_x_window_new(parent, x, y, ewin->w, ewin->h);
+		win = ecore_x_window_argb_new(parent, x, y, ewin->w, ewin->h);
+	else
+		win = ecore_x_window_new(parent, x, y, ewin->w, ewin->h);
 	/* Set the protocols */
 	protos[num++] = ECORE_X_ATOM_WM_DELETE_WINDOW;
 	ecore_x_icccm_protocol_atoms_set(win, protos, num);

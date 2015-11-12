@@ -237,7 +237,7 @@ static void _efl_egueb_smart_reconfigure(Efl_Egueb_Smart *thiz)
 
 	/* resize the document content */
 	if (thiz->window)
-		egueb_dom_feature_window_content_size_set(thiz->window, w, h);
+		egueb_dom_feature_window_size_set(thiz->window, w, h);
 
 	/* center the image */
 	evas_object_image_size_get(thiz->img, &iw, &ih);
@@ -324,7 +324,8 @@ static Eina_Bool _efl_egueb_smart_surface_reconfigure(Efl_Egueb_Smart *thiz)
 	Evas_Coord iw, ih;
 	Evas_Coord w, h;
 
-	egueb_dom_feature_window_content_size_get(thiz->window, &w, &h);
+	w = thiz->w;
+	h = thiz->h;
 	evas_object_image_size_get(thiz->img, &iw, &ih);
 
 	if ((iw != w) || (ih != h))

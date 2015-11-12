@@ -59,7 +59,7 @@ typedef struct _Efl_Egueb_Window
 } Efl_Egueb_Window;
 
 Efl_Egueb_Window * efl_egueb_window_new(Egueb_Dom_Node *doc,
-		int x, int y, int w, int h,
+		int x, int y, int *w, int *h,
 		const Efl_Egueb_Window_Descriptor *d, void *data);
 void efl_egueb_window_free(Efl_Egueb_Window *thiz);
 void efl_egueb_window_update_size(Efl_Egueb_Window *thiz, int w, int h);

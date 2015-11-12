@@ -320,7 +320,7 @@ EAPI Egueb_Dom_Window * efl_egueb_window_win32_new(Egueb_Dom_Node *doc,
 	thiz = calloc(1, sizeof(Efl_Egueb_Window_Win32));
 
 	/* create the efl window */
-	ewin = efl_egueb_window_new(doc, x, y, w, h, &_descriptor, thiz);
+	ewin = efl_egueb_window_new(doc, x, y, &w, &h, &_descriptor, thiz);
 	if (!ewin)
 	{
 		free(thiz);
