@@ -376,7 +376,7 @@ static Eina_Bool _efl_egueb_smart_topmost_setup(Efl_Egueb_Smart *thiz,
 			EGUEB_DOM_FEATURE_UI_NAME, NULL);
 	if (ui)
 	{
-		egueb_dom_feature_ui_input_get(ui, &thiz->input);
+		thiz->input = egueb_dom_feature_ui_input_get(ui);
 		egueb_dom_feature_unref(ui);
 	}
 

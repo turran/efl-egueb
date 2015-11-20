@@ -234,7 +234,7 @@ static Eina_Bool _efl_egueb_window_topmost_setup(Efl_Egueb_Window *thiz,
 			EGUEB_DOM_FEATURE_UI_NAME, NULL);
 	if (ui)
 	{
-		egueb_dom_feature_ui_input_get(ui, &thiz->input);
+		thiz->input = egueb_dom_feature_ui_input_get(ui);
 		egueb_dom_feature_unref(ui);
 	}
 	ret = EINA_TRUE;
