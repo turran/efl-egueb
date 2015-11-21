@@ -55,6 +55,82 @@ static inline Eina_Bool _check_window(Efl_Egueb_Window *thiz, Ecore_Window w)
 	else return EINA_FALSE;
 }
 
+static void _efl_egueb_window_transform_key(Ecore_Event_Key *ev,
+		Egueb_Dom_String **key, Egueb_Dom_String **code,
+		Egueb_Dom_Key_Location *location)
+{
+	if (ev->string)
+	{
+		*code = egueb_dom_string_new_with_string(ev->keyname);
+		if (!strncmp(ev->key, "KP_", 3))
+		{
+			*key = egueb_dom_string_new_with_string(ev->string);
+			*location = EGUEB_DOM_KEY_LOCATION_NUMPAD;
+		}
+		else if (!strcmp(ev->key, "Tab"))
+		{
+			*key = egueb_dom_string_new_with_string(ev->key);
+			*location = EGUEB_DOM_KEY_LOCATION_STANDARD;
+		}
+		else
+		{
+			*key = egueb_dom_string_new_with_string(ev->string);
+			*location = EGUEB_DOM_KEY_LOCATION_STANDARD;
+		}
+	}
+	else
+	{
+		if (!strcmp(ev->key, "Control_L"))
+		{
+			*key = egueb_dom_string_new_with_string("Control");
+			*code = egueb_dom_string_new_with_string("ControlLeft");
+			*location = EGUEB_DOM_KEY_LOCATION_LEFT;
+		}
+		else if (!strcmp(ev->key, "Control_R"))
+		{
+			*key = egueb_dom_string_new_with_string("Control");
+			*code = egueb_dom_string_new_with_string("ControlRight");
+			*location = EGUEB_DOM_KEY_LOCATION_RIGHT;
+		}
+		else if (!strcmp(ev->key, "Shift_L"))
+		{
+			*key = egueb_dom_string_new_with_string("Shift");
+			*code = egueb_dom_string_new_with_string("ShiftLeft");
+			*location = EGUEB_DOM_KEY_LOCATION_LEFT;
+		}
+		else if (!strcmp(ev->key, "Shift_R"))
+		{
+			*key = egueb_dom_string_new_with_string("Shift");
+			*code = egueb_dom_string_new_with_string("ShiftRight");
+			*location = EGUEB_DOM_KEY_LOCATION_RIGHT;
+		}
+		else if (!strcmp(ev->key, "Super_L"))
+		{
+			*key = egueb_dom_string_new_with_string("Super");
+			*code = egueb_dom_string_new_with_string("SuperLeft");
+			*location = EGUEB_DOM_KEY_LOCATION_LEFT;
+		}
+		else if (!strcmp(ev->key, "Super_R"))
+		{
+			*key = egueb_dom_string_new_with_string("Super");
+			*code = egueb_dom_string_new_with_string("SuperRight");
+			*location = EGUEB_DOM_KEY_LOCATION_RIGHT;
+		}
+		else if (!strncmp(ev->key, "KP_", 3))
+		{
+			*key = egueb_dom_string_new_with_string(ev->key + 3);
+			*code = egueb_dom_string_new_with_string(ev->key + 3);
+			*location = EGUEB_DOM_KEY_LOCATION_NUMPAD;
+		}
+		else
+		{
+			*key = egueb_dom_string_new_with_string(ev->key);
+			*code = egueb_dom_string_new_with_string(ev->keyname);
+			*location = EGUEB_DOM_KEY_LOCATION_STANDARD;
+		}
+	}
+}
+
 /*----------------------------------------------------------------------------*
  *                               Event handlers                               *
  *----------------------------------------------------------------------------*/
@@ -63,14 +139,17 @@ static Eina_Bool _efl_egueb_window_key_down(void *data,
 {
 	Efl_Egueb_Window *thiz = data;
 	Ecore_Event_Key *ev = event;
-	Egueb_Dom_String *s;
+	Egueb_Dom_String *key = NULL;
+	Egueb_Dom_String *code = NULL;
+	Egueb_Dom_Key_Location location;
 
 	if (!_check_window(thiz, ev->window))
 		return EINA_TRUE;
+	if (!thiz->input)
+		return EINA_TRUE;
 
-	s = egueb_dom_string_new_with_string(ev->key);
-	if (thiz->input)
-		egueb_dom_input_feed_key_down(thiz->input, s);
+	_efl_egueb_window_transform_key(ev, &key, &code, &location);
+	egueb_dom_input_feed_key_down(thiz->input, key, code, location);
 
 	return EINA_TRUE;
 }
@@ -80,17 +159,16 @@ static Eina_Bool _efl_egueb_window_key_up(void *data,
 {
 	Efl_Egueb_Window *thiz = data;
 	Ecore_Event_Key *ev = event;
-	Egueb_Dom_String *s;
+	Egueb_Dom_String *key, *code;
+	Egueb_Dom_Key_Location location;
 
 	if (!_check_window(thiz, ev->window))
 		return EINA_TRUE;
+	if (!thiz->input)
+		return EINA_TRUE;
 
-	/* Given that ecore already produces the final key,
-	 * is ok to send it
-	 */
-	s = egueb_dom_string_new_with_string(ev->key);
-	if (thiz->input)
-		egueb_dom_input_feed_key_up(thiz->input, s);
+	_efl_egueb_window_transform_key(ev, &key, &code, &location);
+	egueb_dom_input_feed_key_up(thiz->input, key, code, location);
 
 	return EINA_TRUE;
 }
