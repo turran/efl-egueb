@@ -104,6 +104,18 @@ static void _efl_egueb_window_transform_key(Ecore_Event_Key *ev,
 			*code = egueb_dom_string_new_with_string("ShiftRight");
 			*location = EGUEB_DOM_KEY_LOCATION_RIGHT;
 		}
+		else if (!strcmp(ev->key, "Alt_L"))
+		{
+			*key = egueb_dom_string_new_with_string("Alt");
+			*code = egueb_dom_string_new_with_string("AltLeft");
+			*location = EGUEB_DOM_KEY_LOCATION_LEFT;
+		}
+		else if (!strcmp(ev->key, "Alt_R"))
+		{
+			*key = egueb_dom_string_new_with_string("Alt");
+			*code = egueb_dom_string_new_with_string("AltRight");
+			*location = EGUEB_DOM_KEY_LOCATION_RIGHT;
+		}
 		else if (!strcmp(ev->key, "Super_L"))
 		{
 			*key = egueb_dom_string_new_with_string("Super");
@@ -115,6 +127,12 @@ static void _efl_egueb_window_transform_key(Ecore_Event_Key *ev,
 			*key = egueb_dom_string_new_with_string("Super");
 			*code = egueb_dom_string_new_with_string("SuperRight");
 			*location = EGUEB_DOM_KEY_LOCATION_RIGHT;
+		}
+		else if (!strcmp(ev->key, "ISO_Level3_Shift"))
+		{
+			*key = egueb_dom_string_new_with_string("AltGraph");
+			*code = egueb_dom_string_new_with_string("AltGraph");
+			*location = EGUEB_DOM_KEY_LOCATION_STANDARD;
 		}
 		else if (!strncmp(ev->key, "KP_", 3))
 		{
