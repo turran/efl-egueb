@@ -27,12 +27,18 @@ static void help(const char *name)
 	printf("And FILE can be a SVG file or a directory\n");
 }
 
+static void _efl_egueb_window_close_cb(Egueb_Dom_Event *e,
+		void *data)
+{
+	ecore_main_loop_quit();
+}
 
 int main(int argc, char *argv[])
 {
 	Efl_Egueb_Window_Viewer thiz;
 	Egueb_Dom_Window *w;
 	Egueb_Dom_Node *doc = NULL;
+	Egueb_Dom_Event_Target *et;
 	Enesim_Stream *s;
 	Eina_Bool free_file = EINA_FALSE;
 	char *short_options = "hw:e:";
@@ -118,9 +124,15 @@ int main(int argc, char *argv[])
 	thiz.height = height;
 
 	w = efl_egueb_window_auto_new(doc, 0, 0, width, height);
+	EAPI extern Egueb_Dom_String *EGUEB_DOM_EVENT_WINDOW_CLOSE;
 	if (!w)
-		goto shutdown_egueb_svg;
+		goto shutdown_efl_egueb;
 
+	et = EGUEB_DOM_EVENT_TARGET(w);
+	egueb_dom_event_target_event_listener_add(et,
+			EGUEB_DOM_EVENT_WINDOW_CLOSE,
+			_efl_egueb_window_close_cb,
+			EINA_TRUE, NULL);
 	ecore_main_loop_begin();
 
 	egueb_dom_window_unref(w);
@@ -128,7 +140,7 @@ int main(int argc, char *argv[])
 
 	return 0;
 
-shutdown_egueb_svg:
+shutdown_efl_egueb:
 	efl_egueb_shutdown();
 efl_egueb_failed:
 read_error:
