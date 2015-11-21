@@ -134,6 +134,30 @@ static void _efl_egueb_window_transform_key(Ecore_Event_Key *ev,
 			*code = egueb_dom_string_new_with_string("AltGraph");
 			*location = EGUEB_DOM_KEY_LOCATION_STANDARD;
 		}
+		else if (!strcmp(ev->key, "Left"))
+		{
+			*key = egueb_dom_string_new_with_string("ArrowLeft");
+			*code = egueb_dom_string_new_with_string("ArrowLeft");
+			*location = EGUEB_DOM_KEY_LOCATION_STANDARD;
+		}
+		else if (!strcmp(ev->key, "Right"))
+		{
+			*key = egueb_dom_string_new_with_string("ArrowRight");
+			*code = egueb_dom_string_new_with_string("ArrowRight");
+			*location = EGUEB_DOM_KEY_LOCATION_STANDARD;
+		}
+		else if (!strcmp(ev->key, "Down"))
+		{
+			*key = egueb_dom_string_new_with_string("ArrowDown");
+			*code = egueb_dom_string_new_with_string("ArrowDown");
+			*location = EGUEB_DOM_KEY_LOCATION_STANDARD;
+		}
+		else if (!strcmp(ev->key, "Up"))
+		{
+			*key = egueb_dom_string_new_with_string("ArrowUp");
+			*code = egueb_dom_string_new_with_string("ArrowUp");
+			*location = EGUEB_DOM_KEY_LOCATION_STANDARD;
+		}
 		else if (!strncmp(ev->key, "KP_", 3))
 		{
 			*key = egueb_dom_string_new_with_string(ev->key + 3);
