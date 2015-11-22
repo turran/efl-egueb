@@ -194,7 +194,12 @@ static Eina_Bool _efl_egueb_window_win32_event_window_configure(void *data,
 static Eina_Bool _efl_egueb_window_win32_event_window_delete_request(void *data,
 		int type, void *event)
 {
-	//printf("delete request\n");
+	Efl_Egueb_Window_Win32 *thiz = data;
+	Efl_Egueb_Window *base = thiz->base;
+	Ecore_Win32_Event_Window_Delete_Request *ev = event;
+
+	if (thiz->win != ev->window) return EINA_TRUE;
+	egueb_dom_window_close_notify(base->win);
 	return EINA_TRUE;
 }
 
