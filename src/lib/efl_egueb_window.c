@@ -72,6 +72,21 @@ static void _efl_egueb_window_transform_key(Ecore_Event_Key *ev,
 			*key = egueb_dom_string_new_with_string(ev->key);
 			*location = EGUEB_DOM_KEY_LOCATION_STANDARD;
 		}
+		else if (!strcmp(ev->key, "Return"))
+		{
+			*key = egueb_dom_string_new_with_string("Enter");
+			*location = EGUEB_DOM_KEY_LOCATION_STANDARD;
+		}
+		else if (!strcmp(ev->key, "Escape"))
+		{
+			*key = egueb_dom_string_new_with_string(ev->keyname);
+			*location = EGUEB_DOM_KEY_LOCATION_STANDARD;
+		}
+		else if (!strcmp(ev->key, "BackSpace"))
+		{
+			*key = egueb_dom_string_new_with_string(ev->keyname);
+			*location = EGUEB_DOM_KEY_LOCATION_STANDARD;
+		}
 		else
 		{
 			*key = egueb_dom_string_new_with_string(ev->string);
