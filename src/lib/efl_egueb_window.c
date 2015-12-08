@@ -173,6 +173,18 @@ static void _efl_egueb_window_transform_key(Ecore_Event_Key *ev,
 			*code = egueb_dom_string_new_with_string("ArrowUp");
 			*location = EGUEB_DOM_KEY_LOCATION_STANDARD;
 		}
+		else if (!strcmp(ev->key, "Prior"))
+		{
+			*key = egueb_dom_string_new_with_string("PageUp");
+			*code = egueb_dom_string_new_with_string("PageUp");
+			*location = EGUEB_DOM_KEY_LOCATION_STANDARD;
+		}
+		else if (!strcmp(ev->key, "Next"))
+		{
+			*key = egueb_dom_string_new_with_string("PageDown");
+			*code = egueb_dom_string_new_with_string("PageDown");
+			*location = EGUEB_DOM_KEY_LOCATION_STANDARD;
+		}
 		else if (!strncmp(ev->key, "KP_", 3))
 		{
 			*key = egueb_dom_string_new_with_string(ev->key + 3);
