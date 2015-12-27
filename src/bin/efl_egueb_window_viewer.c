@@ -124,7 +124,6 @@ int main(int argc, char *argv[])
 	thiz.height = height;
 
 	w = efl_egueb_window_auto_new(doc, 0, 0, width, height);
-	EAPI extern Egueb_Dom_String *EGUEB_DOM_EVENT_WINDOW_CLOSE;
 	if (!w)
 		goto shutdown_efl_egueb;
 
