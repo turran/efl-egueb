@@ -197,7 +197,7 @@ static void _efl_egueb_smart_key_up(void *data, Evas *e EINA_UNUSED,
 		Evas_Event_Key_Up *ev = event_info;
 		Egueb_Dom_String *key;
 
-		key = egueb_dom_string_new_with_string(ev->key);
+		key = egueb_dom_string_new_with_chars(ev->key);
 		/* FIXME */
 		egueb_dom_input_feed_key_up(thiz->input, key, NULL, EGUEB_DOM_KEY_LOCATION_STANDARD);
 	}
@@ -213,7 +213,7 @@ static void _efl_egueb_smart_key_down(void *data, Evas *e EINA_UNUSED,
 		Evas_Event_Key_Down *ev = event_info;
 		Egueb_Dom_String *key;
 
-		key = egueb_dom_string_new_with_string(ev->key);
+		key = egueb_dom_string_new_with_chars(ev->key);
 		/* FIXME */
 		egueb_dom_input_feed_key_down(thiz->input, key, NULL, EGUEB_DOM_KEY_LOCATION_STANDARD);
 	}

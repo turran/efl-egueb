@@ -180,7 +180,7 @@ static void _efl_egueb_document_io_data_cb(Egueb_Dom_Event *ev, void *data)
 	if (uri.fragment != NULL)
 		goto has_fragment;
 
-	DBG("Data requested '%s' (%d)", egueb_dom_string_string_get(
+	DBG("Data requested '%s' (%d)", egueb_dom_string_chars_get(
 			uri.location), uri.type);
 	if (uri.type == EGUEB_DOM_URI_TYPE_ABSOLUTE)
 	{
@@ -266,8 +266,8 @@ static void _efl_egueb_document_navigation_relative_load(Efl_Egueb_Document *thi
 	}
 
 	DBG("Resolving relative uri for document '%s' at '%s'",
-			egueb_dom_string_string_get(location),
-			egueb_dom_string_string_get(resolved.location));
+			egueb_dom_string_chars_get(location),
+			egueb_dom_string_chars_get(resolved.location));
 	_efl_egueb_document_navigation_load(thiz, resolved.location);
 	egueb_dom_uri_cleanup(&resolved);
 no_resolve:
@@ -284,7 +284,7 @@ static void _efl_egueb_document_navigation_go_to_cb(Egueb_Dom_Event *ev, void *d
 	if (uri.fragment != NULL)
 		goto has_fragment;
 
-	DBG("Going to '%s' (%d)", egueb_dom_string_string_get(
+	DBG("Going to '%s' (%d)", egueb_dom_string_chars_get(
 			uri.location), uri.type);
 	if (uri.type == EGUEB_DOM_URI_TYPE_ABSOLUTE)
 	{
@@ -312,7 +312,7 @@ static void _efl_egueb_document_script_scripter_cb(Egueb_Dom_Event *ev, void *da
 
 	/* check for our own scripters */
 	type = egueb_dom_event_script_type_get(ev);
-	stype = egueb_dom_string_string_get(type);
+	stype = egueb_dom_string_chars_get(type);
 
 	DBG("Requesting a script for '%s'", stype);
 	/* normalize the type */

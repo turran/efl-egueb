@@ -61,35 +61,35 @@ static void _efl_egueb_window_transform_key(Ecore_Event_Key *ev,
 {
 	if (ev->string)
 	{
-		*code = egueb_dom_string_new_with_string(ev->keyname);
+		*code = egueb_dom_string_new_with_chars(ev->keyname);
 		if (!strncmp(ev->key, "KP_", 3))
 		{
-			*key = egueb_dom_string_new_with_string(ev->string);
+			*key = egueb_dom_string_new_with_chars(ev->string);
 			*location = EGUEB_DOM_KEY_LOCATION_NUMPAD;
 		}
 		else if (!strcmp(ev->key, "Tab"))
 		{
-			*key = egueb_dom_string_new_with_string(ev->key);
+			*key = egueb_dom_string_new_with_chars(ev->key);
 			*location = EGUEB_DOM_KEY_LOCATION_STANDARD;
 		}
 		else if (!strcmp(ev->key, "Return"))
 		{
-			*key = egueb_dom_string_new_with_string("Enter");
+			*key = egueb_dom_string_new_with_chars("Enter");
 			*location = EGUEB_DOM_KEY_LOCATION_STANDARD;
 		}
 		else if (!strcmp(ev->key, "Escape"))
 		{
-			*key = egueb_dom_string_new_with_string(ev->keyname);
+			*key = egueb_dom_string_new_with_chars(ev->keyname);
 			*location = EGUEB_DOM_KEY_LOCATION_STANDARD;
 		}
 		else if (!strcmp(ev->key, "BackSpace"))
 		{
-			*key = egueb_dom_string_new_with_string(ev->keyname);
+			*key = egueb_dom_string_new_with_chars(ev->keyname);
 			*location = EGUEB_DOM_KEY_LOCATION_STANDARD;
 		}
 		else
 		{
-			*key = egueb_dom_string_new_with_string(ev->string);
+			*key = egueb_dom_string_new_with_chars(ev->string);
 			*location = EGUEB_DOM_KEY_LOCATION_STANDARD;
 		}
 	}
@@ -97,104 +97,104 @@ static void _efl_egueb_window_transform_key(Ecore_Event_Key *ev,
 	{
 		if (!strcmp(ev->key, "Control_L"))
 		{
-			*key = egueb_dom_string_new_with_string("Control");
-			*code = egueb_dom_string_new_with_string("ControlLeft");
+			*key = egueb_dom_string_new_with_chars("Control");
+			*code = egueb_dom_string_new_with_chars("ControlLeft");
 			*location = EGUEB_DOM_KEY_LOCATION_LEFT;
 		}
 		else if (!strcmp(ev->key, "Control_R"))
 		{
-			*key = egueb_dom_string_new_with_string("Control");
-			*code = egueb_dom_string_new_with_string("ControlRight");
+			*key = egueb_dom_string_new_with_chars("Control");
+			*code = egueb_dom_string_new_with_chars("ControlRight");
 			*location = EGUEB_DOM_KEY_LOCATION_RIGHT;
 		}
 		else if (!strcmp(ev->key, "Shift_L"))
 		{
-			*key = egueb_dom_string_new_with_string("Shift");
-			*code = egueb_dom_string_new_with_string("ShiftLeft");
+			*key = egueb_dom_string_new_with_chars("Shift");
+			*code = egueb_dom_string_new_with_chars("ShiftLeft");
 			*location = EGUEB_DOM_KEY_LOCATION_LEFT;
 		}
 		else if (!strcmp(ev->key, "Shift_R"))
 		{
-			*key = egueb_dom_string_new_with_string("Shift");
-			*code = egueb_dom_string_new_with_string("ShiftRight");
+			*key = egueb_dom_string_new_with_chars("Shift");
+			*code = egueb_dom_string_new_with_chars("ShiftRight");
 			*location = EGUEB_DOM_KEY_LOCATION_RIGHT;
 		}
 		else if (!strcmp(ev->key, "Alt_L"))
 		{
-			*key = egueb_dom_string_new_with_string("Alt");
-			*code = egueb_dom_string_new_with_string("AltLeft");
+			*key = egueb_dom_string_new_with_chars("Alt");
+			*code = egueb_dom_string_new_with_chars("AltLeft");
 			*location = EGUEB_DOM_KEY_LOCATION_LEFT;
 		}
 		else if (!strcmp(ev->key, "Alt_R"))
 		{
-			*key = egueb_dom_string_new_with_string("Alt");
-			*code = egueb_dom_string_new_with_string("AltRight");
+			*key = egueb_dom_string_new_with_chars("Alt");
+			*code = egueb_dom_string_new_with_chars("AltRight");
 			*location = EGUEB_DOM_KEY_LOCATION_RIGHT;
 		}
 		else if (!strcmp(ev->key, "Super_L"))
 		{
-			*key = egueb_dom_string_new_with_string("Super");
-			*code = egueb_dom_string_new_with_string("SuperLeft");
+			*key = egueb_dom_string_new_with_chars("Super");
+			*code = egueb_dom_string_new_with_chars("SuperLeft");
 			*location = EGUEB_DOM_KEY_LOCATION_LEFT;
 		}
 		else if (!strcmp(ev->key, "Super_R"))
 		{
-			*key = egueb_dom_string_new_with_string("Super");
-			*code = egueb_dom_string_new_with_string("SuperRight");
+			*key = egueb_dom_string_new_with_chars("Super");
+			*code = egueb_dom_string_new_with_chars("SuperRight");
 			*location = EGUEB_DOM_KEY_LOCATION_RIGHT;
 		}
 		else if (!strcmp(ev->key, "ISO_Level3_Shift"))
 		{
-			*key = egueb_dom_string_new_with_string("AltGraph");
-			*code = egueb_dom_string_new_with_string("AltGraph");
+			*key = egueb_dom_string_new_with_chars("AltGraph");
+			*code = egueb_dom_string_new_with_chars("AltGraph");
 			*location = EGUEB_DOM_KEY_LOCATION_STANDARD;
 		}
 		else if (!strcmp(ev->key, "Left"))
 		{
-			*key = egueb_dom_string_new_with_string("ArrowLeft");
-			*code = egueb_dom_string_new_with_string("ArrowLeft");
+			*key = egueb_dom_string_new_with_chars("ArrowLeft");
+			*code = egueb_dom_string_new_with_chars("ArrowLeft");
 			*location = EGUEB_DOM_KEY_LOCATION_STANDARD;
 		}
 		else if (!strcmp(ev->key, "Right"))
 		{
-			*key = egueb_dom_string_new_with_string("ArrowRight");
-			*code = egueb_dom_string_new_with_string("ArrowRight");
+			*key = egueb_dom_string_new_with_chars("ArrowRight");
+			*code = egueb_dom_string_new_with_chars("ArrowRight");
 			*location = EGUEB_DOM_KEY_LOCATION_STANDARD;
 		}
 		else if (!strcmp(ev->key, "Down"))
 		{
-			*key = egueb_dom_string_new_with_string("ArrowDown");
-			*code = egueb_dom_string_new_with_string("ArrowDown");
+			*key = egueb_dom_string_new_with_chars("ArrowDown");
+			*code = egueb_dom_string_new_with_chars("ArrowDown");
 			*location = EGUEB_DOM_KEY_LOCATION_STANDARD;
 		}
 		else if (!strcmp(ev->key, "Up"))
 		{
-			*key = egueb_dom_string_new_with_string("ArrowUp");
-			*code = egueb_dom_string_new_with_string("ArrowUp");
+			*key = egueb_dom_string_new_with_chars("ArrowUp");
+			*code = egueb_dom_string_new_with_chars("ArrowUp");
 			*location = EGUEB_DOM_KEY_LOCATION_STANDARD;
 		}
 		else if (!strcmp(ev->key, "Prior"))
 		{
-			*key = egueb_dom_string_new_with_string("PageUp");
-			*code = egueb_dom_string_new_with_string("PageUp");
+			*key = egueb_dom_string_new_with_chars("PageUp");
+			*code = egueb_dom_string_new_with_chars("PageUp");
 			*location = EGUEB_DOM_KEY_LOCATION_STANDARD;
 		}
 		else if (!strcmp(ev->key, "Next"))
 		{
-			*key = egueb_dom_string_new_with_string("PageDown");
-			*code = egueb_dom_string_new_with_string("PageDown");
+			*key = egueb_dom_string_new_with_chars("PageDown");
+			*code = egueb_dom_string_new_with_chars("PageDown");
 			*location = EGUEB_DOM_KEY_LOCATION_STANDARD;
 		}
 		else if (!strncmp(ev->key, "KP_", 3))
 		{
-			*key = egueb_dom_string_new_with_string(ev->key + 3);
-			*code = egueb_dom_string_new_with_string(ev->key + 3);
+			*key = egueb_dom_string_new_with_chars(ev->key + 3);
+			*code = egueb_dom_string_new_with_chars(ev->key + 3);
 			*location = EGUEB_DOM_KEY_LOCATION_NUMPAD;
 		}
 		else
 		{
-			*key = egueb_dom_string_new_with_string(ev->key);
-			*code = egueb_dom_string_new_with_string(ev->keyname);
+			*key = egueb_dom_string_new_with_chars(ev->key);
+			*code = egueb_dom_string_new_with_chars(ev->keyname);
 			*location = EGUEB_DOM_KEY_LOCATION_STANDARD;
 		}
 	}
@@ -604,7 +604,7 @@ void efl_egueb_window_free(Efl_Egueb_Window *thiz)
 	free(thiz);
 }
 /*----------------------------------------------------------------------------*
- *                        DOM  Window descriptor interface                    *
+ *                     DOM Window descriptor interface                        *
  *----------------------------------------------------------------------------*/
 void efl_egueb_window_destroy(void *data)
 {

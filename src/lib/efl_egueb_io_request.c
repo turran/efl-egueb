@@ -70,7 +70,7 @@ Efl_Egueb_IO_Request * efl_egueb_io_request_new(Egueb_Dom_String *location,
 
 
 	if (!location) return NULL;
-	filename = egueb_dom_string_string_get(location);
+	filename = egueb_dom_string_chars_get(location);
 
 	thiz = calloc(1, sizeof(Efl_Egueb_IO_Request));
 	thiz->descriptor = descriptor;
