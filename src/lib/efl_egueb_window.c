@@ -461,7 +461,7 @@ static Eina_Bool _efl_egueb_window_idle_enterer_cb(void *data)
 		egueb_dom_feature_render_draw_list(thiz->render, thiz->s,
 				ENESIM_ROP_BLEND, thiz->damages, 0, 0, NULL);
 		/* convert */
-		enesim_converter_surface(thiz->s, thiz->b);
+		enesim_surface_convert(thiz->s, thiz->b);
 		if (!thiz->desc->output_update)
 		{
 			EINA_LIST_FREE(thiz->damages, r)
