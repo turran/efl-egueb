@@ -66,7 +66,7 @@ void efl_egueb_window_update_size(Efl_Egueb_Window *thiz, int w, int h);
 
 void efl_egueb_window_destroy(void *data);
 void * efl_egueb_window_timeout_set(void *data,
-		Egueb_Dom_Window_Descriptor_Timeout_Cb cb,
+		Egueb_Dom_Window_Timeout_Cb cb,
 		int64_t delay, void *user_data);
 void efl_egueb_window_timeout_clear(void *data, void *timeout);
 int efl_egueb_window_width_get(void *data);

@@ -34,7 +34,7 @@
 typedef struct _Efl_Egueb_Timeout
 {
 	Ecore_Timer *timer;
-	Egueb_Dom_Window_Descriptor_Timeout_Cb cb;
+	Egueb_Dom_Window_Timeout_Cb cb;
 	Egueb_Dom_Window *win;
 	void *user_data;
 } Efl_Egueb_Timeout;
@@ -613,7 +613,7 @@ void efl_egueb_window_destroy(void *data)
 }
 
 void * efl_egueb_window_timeout_set(void *data,
-		Egueb_Dom_Window_Descriptor_Timeout_Cb cb,
+		Egueb_Dom_Window_Timeout_Cb cb,
 		int64_t delay, void *user_data)
 {
 	Efl_Egueb_Window *thiz = data;
