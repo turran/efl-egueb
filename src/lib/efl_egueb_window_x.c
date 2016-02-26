@@ -477,7 +477,8 @@ EAPI Egueb_Dom_Window * efl_egueb_window_x_new(Egueb_Dom_Node *doc,
 	ecore_x_window_show(win);
 
 	/* create the dom window */
-	ret = egueb_dom_window_new(&_dom_descriptor, doc, ewin);
+	ret = egueb_dom_window_new(&_dom_descriptor, ewin);
+	egueb_dom_window_document_set(ret, doc);
 	ewin->win = ret;
 
 	return ret;
